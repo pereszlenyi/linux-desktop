@@ -15,3 +15,26 @@
           update_cache: yes
           upgrade: full
         tags: update
+
+      - name: "Installing packages"
+        ansible.builtin.apt:
+          cache_valid_time: 600
+          update_cache: yes
+          install_recommends: yes
+          name:
+            - ansible-doc
+            - aptitude
+            - git
+            - joe
+            - mc
+            - python3-pip
+            - geany
+            - geany-plugins
+            - adwaita-icon-theme-full
+            - meld
+          state: present
+        tags: install
+
+      - name: "Cleaning the local apt cache"
+        ansible.builtin.apt:
+          autoclean: yes
