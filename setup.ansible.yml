@@ -1,0 +1,17 @@
+---
+  - name: "Systemwide changes"
+    hosts: localhost
+    connection: local
+    become: yes
+
+    tasks:
+
+      - name: "Add PPA that provides the latest stable upstream Git version"
+        ansible.builtin.apt_repository:
+          repo: ppa:git-core/ppa
+
+      - name: "Updating system"
+        ansible.builtin.apt:
+          update_cache: yes
+          upgrade: full
+        tags: update
