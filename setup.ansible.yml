@@ -8,7 +8,7 @@
 
     tasks:
 
-      - name: "Add PPA that provides the latest stable upstream Git version"
+      - name: "Adding a PPA that provides the latest stable upstream Git version"
         ansible.builtin.apt_repository:
           repo: ppa:git-core/ppa
 
@@ -24,9 +24,11 @@
           update_cache: yes
           install_recommends: yes
           name:
+            - ansible
             - ansible-doc
             - aptitude
             - git
+            - openssh-client
             - joe
             - mc
             - python3-pip
@@ -34,7 +36,7 @@
             - geany-plugins
             - adwaita-icon-theme-full
             - meld
-          state: present
+          state: latest
         tags: install
 
       - name: "Cleaning the local apt cache"
@@ -46,3 +48,28 @@
           src: ./wsl.conf.j2
           dest: /etc/wsl.conf
         tags: wsl.conf
+
+  - name: "Setting up the environment for the current user"
+    hosts: localhost
+    connection: local
+    tags: user
+
+    tasks:
+
+      - name: "Exiting if FULLNAME or EMAIL are not defined"
+        ansible.builtin.fail:
+          msg: "Required variables FULLNAME or EMAIL are not defined."
+        when: (FULLNAME is undefined) or (EMAIL is undefined)
+
+      - name: "Create directory ~/.ssh/ if it does not exist"
+        ansible.builtin.file:
+          path: ~/.ssh/
+          state: directory
+          mode: u=rwx,g=,o=
+
+      - name: "Generating a GitHub recommended SSH key if it doesn't exist"
+        community.crypto.openssh_keypair:
+          path: ~/.ssh/id_ed25519
+          type: ed25519
+          comment: "{{ EMAIL }}"
+          regenerate: partial_idempotence
