@@ -3,6 +3,8 @@
     hosts: localhost
     connection: local
     become: yes
+    vars:
+      HOSTNAME: "UbuntuWSL"
 
     tasks:
 
@@ -38,3 +40,9 @@
       - name: "Cleaning the local apt cache"
         ansible.builtin.apt:
           autoclean: yes
+
+      - name: "Create /etc/wsl.conf from template wsl.conf.j2"
+        ansible.builtin.template:
+          src: ./wsl.conf.j2
+          dest: /etc/wsl.conf
+        tags: wsl.conf
