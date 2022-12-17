@@ -1,0 +1,19 @@
+---
+  - name: "Updating Ansible via the official PPA"
+    hosts: localhost
+    connection: local
+    become: yes
+
+    tasks:
+
+      - name: "Adding a PPA for the latest Ansible version"
+        ansible.builtin.apt_repository:
+          repo: ppa:ansible/ansible
+          update_cache: yes
+
+      - name: "Updating Ansible"
+        ansible.builtin.apt:
+          install_recommends: yes
+          name:
+            - ansible
+          state: latest
