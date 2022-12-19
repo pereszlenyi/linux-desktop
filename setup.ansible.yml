@@ -43,7 +43,7 @@
         ansible.builtin.apt:
           autoclean: yes
 
-      - name: "Create /etc/wsl.conf from template wsl.conf.j2"
+      - name: "Creating /etc/wsl.conf from template wsl.conf.j2"
         ansible.builtin.template:
           src: ./wsl.conf.j2
           dest: /etc/wsl.conf
@@ -73,3 +73,17 @@
           type: ed25519
           comment: "{{ EMAIL }}"
           regenerate: partial_idempotence
+
+      - name: "Creating ~/bash_profile.sh from template bash_profile.sh.j2"
+        ansible.builtin.template:
+          src: ./bash_profile.sh.j2
+          dest: ~/bash_profile.sh
+          mode: u+x
+        tags: bash_profile.sh
+
+      - name: "Adding a line to ~/.bashrc to run ~/bash_profile.sh"
+        ansible.builtin.lineinfile:
+          path: ~/.bashrc
+          line: . ~/bash_profile.sh
+          backup: yes
+        tags: bash_profile.sh

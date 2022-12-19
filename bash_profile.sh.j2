@@ -1,0 +1,16 @@
+#!/bin/bash
+
+export FULLNAME="{{ FULLNAME }}"
+export EMAIL="{{ EMAIL }}"
+
+alias l='ls -lah'
+alias upgrade_system='sudo aptitude update && sudo aptitude full-upgrade'
+alias git_commit='git commit -S'
+
+git config --global user.name "$FULLNAME"
+git config --global user.email "$EMAIL"
+git config --global core.editor "/usr/bin/geany"
+git config --global core.autocrlf input
+git config --global diff.tool meld
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
