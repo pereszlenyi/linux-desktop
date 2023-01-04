@@ -8,6 +8,11 @@
 
     tasks:
 
+      - name: "Exiting if we are not running Ubuntu"
+        ansible.builtin.fail:
+          msg: "The OS is {{ ansible_facts['distribution'] }}. This playbook is only meant to work with Ubuntu."
+        when: ansible_facts['distribution'] != "Ubuntu"
+
       - name: "Adding a PPA that provides the latest stable upstream Git version"
         ansible.builtin.apt_repository:
           repo: ppa:git-core/ppa
