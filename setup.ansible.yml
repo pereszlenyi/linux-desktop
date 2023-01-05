@@ -46,6 +46,17 @@
           state: latest
         tags: install
 
+      - name: Installing packages for Java
+        ansible.builtin.apt:
+          cache_valid_time: 600
+          update_cache: yes
+          install_recommends: yes
+          name:
+            - default-jdk
+            - default-jdk-doc
+          state: latest
+        tags: java
+
       - name: "Cleaning the local apt cache"
         ansible.builtin.apt:
           autoclean: yes
