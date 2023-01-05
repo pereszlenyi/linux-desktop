@@ -1,5 +1,5 @@
 ---
-  - name: "Systemwide changes"
+  - name: Systemwide changes
     hosts: localhost
     connection: local
     become: yes
@@ -8,22 +8,22 @@
 
     tasks:
 
-      - name: "Exiting if we are not running Ubuntu"
+      - name: Exiting if we are not running Ubuntu
         ansible.builtin.fail:
           msg: "The OS is {{ ansible_facts['distribution'] }}. This playbook is only meant to work with Ubuntu."
         when: ansible_facts['distribution'] != "Ubuntu"
 
-      - name: "Adding a PPA that provides the latest stable upstream Git version"
+      - name: Adding a PPA that provides the latest stable upstream Git version
         ansible.builtin.apt_repository:
           repo: ppa:git-core/ppa
 
-      - name: "Updating system"
+      - name: Updating system
         ansible.builtin.apt:
           update_cache: yes
           upgrade: full
         tags: update
 
-      - name: "Installing packages"
+      - name: Installing packages
         ansible.builtin.apt:
           cache_valid_time: 600
           update_cache: yes
@@ -57,49 +57,49 @@
           state: latest
         tags: java
 
-      - name: "Cleaning the local apt cache"
+      - name: Cleaning the local apt cache
         ansible.builtin.apt:
           autoclean: yes
 
-      - name: "Creating /etc/wsl.conf from template wsl.conf.j2"
+      - name: Creating /etc/wsl.conf from template wsl.conf.j2
         ansible.builtin.template:
           src: ./wsl.conf.j2
           dest: /etc/wsl.conf
         tags: wsl.conf
 
-  - name: "Setting up the environment for the current user"
+  - name: Setting up the environment for the current user
     hosts: localhost
     connection: local
     tags: user
 
     tasks:
 
-      - name: "Exiting if FULLNAME or EMAIL are not defined"
+      - name: Exiting if FULLNAME or EMAIL are not defined
         ansible.builtin.fail:
           msg: "Required variables FULLNAME or EMAIL are not defined."
         when: (FULLNAME is undefined) or (EMAIL is undefined)
 
-      - name: "Create directory ~/.ssh/ if it does not exist"
+      - name: Creating directory ~/.ssh/ if it does not exist
         ansible.builtin.file:
           path: ~/.ssh/
           state: directory
           mode: u=rwx,g=,o=
 
-      - name: "Generating a GitHub recommended SSH key if it doesn't exist"
+      - name: Generating a GitHub recommended SSH key if it doesn't exist
         community.crypto.openssh_keypair:
           path: ~/.ssh/id_ed25519
           type: ed25519
           comment: "{{ EMAIL }}"
           regenerate: partial_idempotence
 
-      - name: "Creating ~/bash_profile.sh from template bash_profile.sh.j2"
+      - name: Creating ~/bash_profile.sh from template bash_profile.sh.j2
         ansible.builtin.template:
           src: ./bash_profile.sh.j2
           dest: ~/bash_profile.sh
           mode: u+x
         tags: bash_profile.sh
 
-      - name: "Adding a line to ~/.bashrc to run ~/bash_profile.sh"
+      - name: Adding a line to ~/.bashrc to run ~/bash_profile.sh
         ansible.builtin.lineinfile:
           path: ~/.bashrc
           line: . ~/bash_profile.sh

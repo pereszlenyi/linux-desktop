@@ -1,22 +1,22 @@
 ---
-  - name: "Updating Ansible via the official PPA"
+  - name: Updating Ansible via the official PPA
     hosts: localhost
     connection: local
     become: yes
 
     tasks:
 
-      - name: "Exiting if we are not running Ubuntu"
+      - name: Exiting if we are not running Ubuntu
         ansible.builtin.fail:
           msg: "The OS is {{ ansible_facts['distribution'] }}. This playbook is only meant to work with Ubuntu."
         when: ansible_facts['distribution'] != "Ubuntu"
 
-      - name: "Adding a PPA for the latest Ansible version"
+      - name: Adding a PPA for the latest Ansible version
         ansible.builtin.apt_repository:
           repo: ppa:ansible/ansible
           update_cache: yes
 
-      - name: "Updating Ansible"
+      - name: Updating Ansible
         ansible.builtin.apt:
           install_recommends: yes
           name:
