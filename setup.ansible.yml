@@ -37,6 +37,8 @@
             - joe
             - mc
             - python3-pip
+            - finger
+            - htop
             - geany
             - geany-plugins
             - adwaita-icon-theme-full
@@ -92,3 +94,7 @@
           line: . ~/bash_profile.sh
           backup: yes
         tags: bash_profile.sh
+
+      - name: Setting the full name in /etc/passwd
+        ansible.builtin.command: chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
+        become: yes
