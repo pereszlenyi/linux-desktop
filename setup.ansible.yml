@@ -71,6 +71,8 @@
     hosts: localhost
     connection: local
     tags: user
+    vars:
+      SSH_KEY_FILENAME: "id_ed25519.git"
 
     tasks:
 
@@ -84,13 +86,23 @@
           path: ~/.ssh/
           state: directory
           mode: u=rwx,g=,o=
+        tags: sshkey
 
       - name: Generating a GitHub recommended SSH key if it doesn't exist
         community.crypto.openssh_keypair:
-          path: ~/.ssh/id_ed25519
+          path: ~/.ssh/{{ SSH_KEY_FILENAME }}
           type: ed25519
           comment: "{{ EMAIL }}"
           regenerate: partial_idempotence
+        tags: sshkey
+
+      - name: Creating ~/.ssh/config from template ssh_client_config.j2
+        ansible.builtin.template:
+          src: ./ssh_client_config.j2
+          dest: ~/.ssh/config
+          mode: u=rw,g=,o=
+          backup: yes
+        tags: sshkey
 
       - name: Creating ~/bash_profile.sh from template bash_profile.sh.j2
         ansible.builtin.template:
