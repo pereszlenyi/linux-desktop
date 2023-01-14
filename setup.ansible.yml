@@ -39,6 +39,7 @@
             - python3-pip
             - finger
             - htop
+            - colordiff
             - geany
             - geany-plugins
             - adwaita-icon-theme-full

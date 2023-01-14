@@ -4,8 +4,12 @@ export FULLNAME="{{ FULLNAME }}"
 export EMAIL="{{ EMAIL }}"
 
 alias l='ls -lah'
+alias less='/usr/bin/less --quit-if-one-screen --LINE-NUMBERS'
+alias diff='/usr/bin/colordiff'
+alias joe='/usr/bin/joe -beep -keepup -autoindent -highlight -linums -smartbacks -smarthome -wordwrap'
 alias upgrade_system='sudo aptitude update && sudo aptitude full-upgrade'
 alias git_commit='git commit -S'
+alias git_push='git push --quiet'
 
 git config --global user.name "$FULLNAME"
 git config --global user.email "$EMAIL"
