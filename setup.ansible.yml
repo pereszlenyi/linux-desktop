@@ -31,6 +31,8 @@
           name:
             - ansible
             - ansible-doc
+            - gnupg
+            - coreutils
             - aptitude
             - git
             - openssh-client
@@ -44,6 +46,7 @@
             - geany-plugins
             - adwaita-icon-theme-full
             - meld
+            - gpa
           state: latest
         tags: install
 
@@ -118,6 +121,18 @@
           create: yes
         with_items: '{{ SSH_KEY_FINGERPRINTS }}'
         tags: ssh
+
+      - name: Setting up GPG
+        ansible.builtin.command:
+          cmd: ./scripts/setup_gpg.sh "{{ FULLNAME }}" "{{ EMAIL }}"
+          creates: ~/.gnupg
+        register: GPG_OUTPUT
+        tags: gpg
+
+      - name: Printing the output of GPG setup
+        ansible.builtin.debug:
+          var: GPG_OUTPUT.stdout_lines
+        tags: gpg
 
       - name: Creating ~/bash_profile.sh from template bash_profile.sh.j2
         ansible.builtin.template:
