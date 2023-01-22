@@ -2,35 +2,46 @@
 
 # Run this script to install and setup everything.
 
+ECHO=/usr/bin/echo
+DPKGQ=/usr/bin/dpkg-query
+GREP=/usr/bin/grep
+SUDO=/usr/bin/sudo
+DIRNAME=/usr/bin/dirname
+LS=/usr/bin/ls
+APTGET=/usr/bin/apt-get
+ANSIBLE=/usr/bin/ansible-playbook
+
 function die {
-	echo "Error: $1"
+	$ECHO "Error: $1"
 	exit 1
 }
 
+for FILE in "$ECHO" "$DPKGQ" "$GREP" "$SUDO" "$DIRNAME" "$LS" "$APTGET" ; do
+	[ -x "$FILE" ] || die "'$FILE' doesn't exist or not executable."
+done
+
 function check_ansible {
-	dpkg-query --show --showformat='${Status}\n' ansible | grep "installed" >/dev/null
+	$DPKGQ --show --showformat='${Status}\n' ansible | $GREP -F "ok installed" >/dev/null
 }
 
-DIR=$(dirname "$0")
+DIR=$($DIRNAME "$0")
 cd $DIR || die "Can't enter $DIR."
-ls ./update_ansible.ansible.yml ./setup.ansible.yml >/dev/null || die "Playbooks are missing."
+$LS ./update_ansible.ansible.yml ./setup.ansible.yml >/dev/null || die "Playbooks are missing."
 
-check_ansible || sudo apt-get install ansible
-check_ansible || die "Couldn't install ansible."
+check_ansible || ($ECHO "Installing ansible:" && $SUDO $APTGET install ansible && $ECHO "")
+check_ansible || die "Ansible is not installed."
 
-if [ -z "$FULLNAME" ]; then
-	read -p "Enter full name: " FULLNAME
-fi
-if [ -z "$EMAIL" ]; then
-	read -p "Enter email: " EMAIL
-fi
+[ -z "$FULLNAME" ] && read -p "Enter your full name: " FULLNAME
+[ -z "$FULLNAME" ] && die "Full name can't be empty."
 
-echo -e "\nUsing '$FULLNAME' as full name."
-echo "Using '$EMAIL' as email."
-read -n 1 -s -p "Press any key to continue "
-echo -e "\n"
+[ -z "$EMAIL" ] && read -p "Enter your email: " EMAIL
+[ -z "$EMAIL" ] && die "Email can't be empty."
 
-ansible-playbook ./update_ansible.ansible.yml --ask-become-pass && \
-ansible-playbook ./setup.ansible.yml --ask-become-pass --extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\"" && \
-echo "Install was successful." || \
+$ECHO "Using '$FULLNAME' as full name."
+$ECHO "Using '$EMAIL' as email."
+$ECHO ""
+
+$ANSIBLE ./update_ansible.ansible.yml --ask-become-pass && \
+$ANSIBLE ./setup.ansible.yml --ask-become-pass --extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\"" && \
+$ECHO "Install was successful." || \
 die "Failed to run ansible playbooks."
