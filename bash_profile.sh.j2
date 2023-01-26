@@ -3,19 +3,19 @@
 export FULLNAME="{{ FULLNAME }}"
 export EMAIL="{{ EMAIL }}"
 
-alias l='ls -lah'
+alias l='/usr/bin/ls -lah'
 alias less='/usr/bin/less --quit-if-one-screen --LINE-NUMBERS'
 alias diff='/usr/bin/colordiff'
 alias joe='/usr/bin/joe -beep -keepup -autoindent -highlight -linums -smartbacks -smarthome -wordwrap'
-alias upgrade_system='sudo aptitude update && sudo aptitude full-upgrade'
+alias upgrade_system='/usr/bin/sudo /usr/bin/aptitude update && /usr/bin/sudo /usr/bin/aptitude full-upgrade'
 alias verify_ubuntu_iso='{{ ansible_facts['env']['PWD'] }}/scripts/verify_ubuntu_iso.sh'
-alias git_commit='git commit -S'
-alias git_push='git push --quiet'
+alias git_commit='/usr/bin/git commit -S'
+alias git_push='/usr/bin/git push --quiet'
 
-git config --global user.name "$FULLNAME"
-git config --global user.email "$EMAIL"
-git config --global core.editor "/usr/bin/geany"
-git config --global core.autocrlf input
-git config --global diff.tool meld
-git config --global gpg.format ssh
-git config --global user.signingkey ~/.ssh/{{ SSH_KEY_FILENAME }}.pub
+/usr/bin/git config --global user.name "$FULLNAME"
+/usr/bin/git config --global user.email "$EMAIL"
+/usr/bin/git config --global core.editor "/usr/bin/geany"
+/usr/bin/git config --global core.autocrlf input
+/usr/bin/git config --global diff.tool meld
+/usr/bin/git config --global gpg.format ssh
+/usr/bin/git config --global user.signingkey ~/.ssh/{{ SSH_KEY_FILENAME }}.pub

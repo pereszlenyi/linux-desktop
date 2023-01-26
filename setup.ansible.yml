@@ -149,6 +149,6 @@
         tags: bash_profile.sh
 
       - name: Setting the full name in /etc/passwd
-        ansible.builtin.command: chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
+        ansible.builtin.command: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
         become: yes
         when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
