@@ -3,8 +3,6 @@
 # Run this script to install and setup everything.
 
 ECHO=/usr/bin/echo
-DPKGQ=/usr/bin/dpkg-query
-GREP=/usr/bin/grep
 SUDO=/usr/bin/sudo
 DIRNAME=/usr/bin/dirname
 LS=/usr/bin/ls
@@ -16,12 +14,12 @@ function die {
 	exit 1
 }
 
-for FILE in "$ECHO" "$DPKGQ" "$GREP" "$SUDO" "$DIRNAME" "$LS" "$APTGET" ; do
+for FILE in "$ECHO" "$SUDO" "$DIRNAME" "$LS" "$APTGET" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or not executable."
 done
 
 function check_ansible {
-	$DPKGQ --show --showformat='${Status}\n' ansible | $GREP -F "ok installed" >/dev/null
+	[ -x "$ANSIBLE" ]
 }
 
 DIR=$($DIRNAME "$0")
