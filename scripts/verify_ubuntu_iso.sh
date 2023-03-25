@@ -3,10 +3,20 @@
 # This script verifies a downloaded Ubuntu image.
 # Usage: verify_ubuntu_iso.sh image_filename
 
+ECHO=/usr/bin/echo
+GPG=/usr/bin/gpg
+GREP=/usr/bin/grep
+CUT=/usr/bin/cut
+SHA256SUM=/usr/bin/sha256sum
+
 function die {
-	echo "Error: $1"
+	$ECHO "Error: $1"
 	exit 1
 }
+
+for FILE in "$ECHO" "$GPG" "$GREP" "$CUT" "$SHA256SUM" ; do
+	[ -x "$FILE" ] || die "'$FILE' doesn't exist or not executable."
+done
 
 [ ! $# == 1 ] && die "Usage: $0 image_filename"
 
@@ -19,17 +29,17 @@ for FILE in "$IMAGE_FILE" SHA256SUMS SHA256SUMS.gpg; do
 	[ -r "./${FILE}" ] || die "'$FILE' doesn't exist or not readable."
 done
 
-gpg --batch --keyid-format long --verify ./SHA256SUMS.gpg ./SHA256SUMS || \
+$GPG --batch --keyid-format long --verify ./SHA256SUMS.gpg ./SHA256SUMS || \
 die "Signature of the checksum file is bad."
 
-OFFICIAL_CHECKSUM=$(grep -F "$IMAGE_FILE" ./SHA256SUMS | cut -s -d " " -f 1)
+OFFICIAL_CHECKSUM=$($GREP -F "$IMAGE_FILE" ./SHA256SUMS | $CUT -s -d " " -f 1)
 [ -z "$OFFICIAL_CHECKSUM" ] && die "No checksum of '$IMAGE_FILE' in SHA256SUMS."
-echo "Official checksum:   '$OFFICIAL_CHECKSUM'"
+$ECHO "Official checksum:   '$OFFICIAL_CHECKSUM'"
 
-CALCULATED_CHECKSUM=$(sha256sum "./${IMAGE_FILE}" | cut -s -d " " -f 1)
+CALCULATED_CHECKSUM=$($SHA256SUM "./${IMAGE_FILE}" | $CUT -s -d " " -f 1)
 [ -z "$CALCULATED_CHECKSUM" ] && die "Failed to calculate the checksum of '$IMAGE_FILE'."
-echo "Calculated checksum: '$CALCULATED_CHECKSUM'"
+$ECHO "Calculated checksum: '$CALCULATED_CHECKSUM'"
 
 [ "$OFFICIAL_CHECKSUM" == "$CALCULATED_CHECKSUM" ] || die "The checksums don't match."
 
-echo -e "\nImage '$IMAGE_FILE' was VERIFIED."
+$ECHO -e "\nImage '$IMAGE_FILE' was VERIFIED."
