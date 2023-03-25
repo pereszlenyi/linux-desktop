@@ -38,15 +38,34 @@
             - openssh-client
             - joe
             - mc
+            - tofrodos
             - python3-pip
             - finger
             - htop
             - colordiff
+            - build-essential
+            - cmake
+            # Fonts
+            - fonts-noto
+            - fonts-recommended
+            - fonts-cascadia-code
+            - fonts-droid-fallback
+            - fonts-firacode
+            - fonts-font-awesome
+            - fonts-fork-awesome
+            - fonts-monoid
+            - fonts-monoid-halfloose
+            - fonts-monoid-halftight
+            - fonts-monoid-loose
+            - fonts-monoid-tight
+            # GUI applications
+            - gitk
             - geany
             - geany-plugins
             - adwaita-icon-theme-full
             - meld
             - gpa
+            - font-manager
           state: latest
         tags: install
 
@@ -58,6 +77,7 @@
           name:
             - default-jdk
             - default-jdk-doc
+            - maven
           state: latest
         tags: java
 
