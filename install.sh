@@ -25,8 +25,12 @@ function check_ansible {
 DIR=$($DIRNAME "$0")
 cd $DIR || die "Can't enter $DIR."
 
-for FILE in ./update_ansible.ansible.yml ./setup.ansible.yml ; do
-	[ -r "$FILE" ] || die "$FILE is missing or not readable."
+for FILE in update_ansible.ansible.yml setup.ansible.yml ; do
+	[ -r "./$FILE" ] || die "$FILE is missing or not readable."
+done
+
+for FILE in yes_or_no.sh setup_gpg.sh ; do
+	[ -x "./scripts/$FILE" ] || die "'$FILE' doesn't exist or not executable."
 done
 
 $ECHO "=== Setting up your Linux system ==="
@@ -51,3 +55,13 @@ $ANSIBLE ./update_ansible.ansible.yml --ask-become-pass && \
 $ANSIBLE ./setup.ansible.yml --ask-become-pass --extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\"" && \
 $ECHO "=== Install was SUCCESSFUL ===" || \
 die "Failed to run Ansible playbooks."
+
+if [ -e /var/run/reboot-required ] ; then
+	$ECHO ""
+	$ECHO "You have to shut down and restart WSL for the changes to take effect."
+	if ./scripts/yes_or_no.sh "Do you want to shut down WSL now?" ; then
+		wsl.exe --shutdown
+	else
+		$ECHO "To shut down WSL later, execute \"wsl.exe --shutdown\"."
+	fi
+fi
