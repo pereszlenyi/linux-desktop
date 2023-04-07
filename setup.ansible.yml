@@ -87,7 +87,7 @@
 
       - name: Creating /etc/wsl.conf from template wsl.conf.j2
         ansible.builtin.template:
-          src: ./wsl.conf.j2
+          src: ./templates/wsl.conf.j2
           dest: /etc/wsl.conf
           mode: u=rw,g=r,o=r
         notify: "reboot required"
@@ -137,7 +137,7 @@
 
       - name: Creating ~/.ssh/config from template ssh_client_config.j2
         ansible.builtin.template:
-          src: ./ssh_client_config.j2
+          src: ./templates/ssh_client_config.j2
           dest: ~/.ssh/config
           mode: u=rw,g=,o=
           backup: yes
@@ -166,7 +166,7 @@
 
       - name: Creating ~/bash_profile.sh from template bash_profile.sh.j2
         ansible.builtin.template:
-          src: ./bash_profile.sh.j2
+          src: ./templates/bash_profile.sh.j2
           dest: ~/bash_profile.sh
           mode: u=rwx,g=r,o=r
         tags: bash_profile.sh
