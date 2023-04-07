@@ -89,7 +89,17 @@
         ansible.builtin.template:
           src: ./wsl.conf.j2
           dest: /etc/wsl.conf
+          mode: u=rw,g=r,o=r
+        notify: "reboot required"
         tags: wsl.conf
+
+    handlers:
+      - name: Touching /var/run/reboot-required
+        ansible.builtin.file:
+          path: /var/run/reboot-required
+          state: touch
+          mode: u=rw,g=r,o=r
+        listen: "reboot required"
 
   - name: Setting up the environment for the current user
     hosts: localhost
@@ -158,7 +168,7 @@
         ansible.builtin.template:
           src: ./bash_profile.sh.j2
           dest: ~/bash_profile.sh
-          mode: u+x
+          mode: u=rwx,g=r,o=r
         tags: bash_profile.sh
 
       - name: Adding a line to ~/.bashrc to run ~/bash_profile.sh
