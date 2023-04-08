@@ -5,6 +5,10 @@
     become: yes
     vars:
       HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
+      REQUIRED_SYSTEMD_SERVICES: [
+        "unattended-upgrades",
+        "snapd"
+      ]
 
     tasks:
 
@@ -12,6 +16,13 @@
         ansible.builtin.fail:
           msg: "The OS is {{ ansible_facts['distribution'] }}. This playbook is only meant to work with Ubuntu."
         when: ansible_facts['distribution'] != "Ubuntu"
+
+      - name: Populating service facts
+        ansible.builtin.service_facts:
+
+      - name: Setting variable SYSTEMD_IS_RUNNING
+        ansible.builtin.set_fact:
+          SYSTEMD_IS_RUNNING: "{{ ansible_facts.services['systemd-logind.service'] is defined }}"
 
       - name: Adding a PPA that provides the latest stable upstream Git version
         ansible.builtin.apt_repository:
@@ -34,6 +45,7 @@
             - gnupg
             - coreutils
             - aptitude
+            - snapd
             - git
             - openssh-client
             - joe
@@ -84,6 +96,13 @@
       - name: Cleaning the local apt cache
         ansible.builtin.apt:
           autoclean: yes
+
+      - name: Starting services if they are not running
+        ansible.builtin.service:
+          name: '{{ item }}'
+          state: started
+        with_items: '{{ REQUIRED_SYSTEMD_SERVICES }}'
+        when: SYSTEMD_IS_RUNNING
 
       - name: Creating /etc/wsl.conf from template wsl.conf.j2
         ansible.builtin.template:
