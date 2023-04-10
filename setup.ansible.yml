@@ -45,6 +45,7 @@
             - gnupg
             - coreutils
             - aptitude
+            - unattended-upgrades
             - snapd
             - git
             - openssh-client
@@ -93,6 +94,12 @@
           state: latest
         tags: java
 
+      - name: Removing Mozilla Firefox deb package
+        ansible.builtin.apt:
+          name: firefox
+          state: absent
+        when: SYSTEMD_IS_RUNNING
+
       - name: Cleaning the local apt cache
         ansible.builtin.apt:
           autoclean: yes
@@ -103,6 +110,18 @@
           state: started
         with_items: '{{ REQUIRED_SYSTEMD_SERVICES }}'
         when: SYSTEMD_IS_RUNNING
+
+      - name: Installing Mozilla Firefox snap
+        community.general.snap:
+          name: firefox
+        when: SYSTEMD_IS_RUNNING
+
+      - name: Installing IntelliJ IDEA Community Edition
+        community.general.snap:
+          name: intellij-idea-community
+          classic: true
+        when: SYSTEMD_IS_RUNNING
+        tags: java
 
       - name: Creating /etc/wsl.conf from template wsl.conf.j2
         ansible.builtin.template:
