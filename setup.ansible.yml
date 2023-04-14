@@ -4,6 +4,9 @@
     connection: local
     become: yes
     vars:
+      ARCHITECTURE_ALIAS:
+        x86_64: amd64
+      ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
       HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
       REQUIRED_SYSTEMD_SERVICES: [
         "unattended-upgrades",
@@ -43,6 +46,7 @@
             - ansible
             - ansible-doc
             - gnupg
+            - ca-certificates
             - coreutils
             - aptitude
             - unattended-upgrades
@@ -82,6 +86,12 @@
           state: latest
         tags: install
 
+      - name: Creating directory /etc/apt/keyrings if it does not exist
+        ansible.builtin.file:
+          path: /etc/apt/keyrings
+          state: directory
+          mode: u=rwx,g=rx,o=rx
+
       - name: Installing packages for Java
         ansible.builtin.apt:
           cache_valid_time: 600
@@ -100,9 +110,61 @@
           state: absent
         when: SYSTEMD_IS_RUNNING
 
+      - name: Removing old versions of Docker
+        ansible.builtin.apt:
+          name:
+            - docker
+            - docker-engine
+            - docker.io
+            - containerd
+            - runc
+          state: absent
+        when: CONTAINERIZATION_TECHS
+
+      - name: Adding Docker's official GPG key
+        ansible.builtin.shell:
+          cmd: /usr/bin/gpg --dearmor --output /etc/apt/keyrings/docker.gpg <./apt_keyrings/docker.txt
+          creates: /etc/apt/keyrings/docker.gpg
+          executable: /bin/bash
+        when: CONTAINERIZATION_TECHS
+
+      - name: Adding Docker's repository
+        ansible.builtin.apt_repository:
+          repo: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
+          filename: docker
+          update_cache: no
+        when: CONTAINERIZATION_TECHS
+
+      - name: Installing Docker
+        ansible.builtin.apt:
+          update_cache: yes
+          install_recommends: yes
+          name:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+            - docker-buildx-plugin
+            - docker-compose-plugin
+          state: latest
+        when: CONTAINERIZATION_TECHS
+
       - name: Cleaning the local apt cache
         ansible.builtin.apt:
           autoclean: yes
+
+      - name: Ensuring group docker exists
+        ansible.builtin.group:
+          name: docker
+          state: present
+        when: CONTAINERIZATION_TECHS
+
+      - name: Adding the user to the docker group
+        ansible.builtin.user:
+          name: "{{ ansible_facts['env']['SUDO_USER'] }}"
+          groups: docker
+          append: yes
+        notify: "reboot required"
+        when: CONTAINERIZATION_TECHS
 
       - name: Starting services if they are not running
         ansible.builtin.service:
