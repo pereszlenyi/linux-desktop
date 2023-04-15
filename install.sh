@@ -18,6 +18,8 @@ for FILE in "$ECHO" "$SUDO" "$DIRNAME" "$APTGET" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or not executable."
 done
 
+[ $# == 0 ] || die "\"$0\" doesn't accept any parameters."
+
 function check_ansible {
 	[ -x "$ANSIBLE" ]
 }
@@ -50,11 +52,20 @@ $ECHO "Using \"$FULLNAME\" as full name."
 $ECHO "Using \"$EMAIL\" as email."
 $ECHO ""
 
+INSTALL_CONTAINERIZATION_TECHS=false
+if ./scripts/yes_or_no.sh \
+	"Do you want to install containerization technologies such as Docker, Kubernetes, etc.?" ; then
+	INSTALL_CONTAINERIZATION_TECHS=true
+fi
+$ECHO ""
+
 $ECHO "=== Running Ansible playbooks ==="
 $ANSIBLE ./update_ansible.ansible.yml --ask-become-pass && \
-$ANSIBLE ./setup.ansible.yml --ask-become-pass --extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\"" && \
+$ANSIBLE ./setup.ansible.yml --ask-become-pass \
+	--extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\" \
+	INSTALL_CONTAINERIZATION_TECHS=\"$INSTALL_CONTAINERIZATION_TECHS\"" && \
 $ECHO "=== Install was SUCCESSFUL ===" || \
-die "Failed to run Ansible playbooks."
+die "Failed to run Ansible playbooks. You can try shutting down and restarting WSL (by \"wsl.exe --shutdown\") then running $0 again."
 
 if [ -e /var/run/reboot-required ] ; then
 	$ECHO ""
