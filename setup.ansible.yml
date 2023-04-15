@@ -23,9 +23,10 @@
       - name: Populating service facts
         ansible.builtin.service_facts:
 
-      - name: Setting variable SYSTEMD_IS_RUNNING
+      - name: Setting variables
         ansible.builtin.set_fact:
           SYSTEMD_IS_RUNNING: "{{ ansible_facts.services['systemd-logind.service'] is defined }}"
+          CONTAINERIZATION_TECHS: "{{ INSTALL_CONTAINERIZATION_TECHS is defined and INSTALL_CONTAINERIZATION_TECHS == 'true' }}"
 
       - name: Adding a PPA that provides the latest stable upstream Git version
         ansible.builtin.apt_repository:
@@ -282,3 +283,20 @@
         ansible.builtin.command: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
         become: yes
         when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
+
+      - name: Inspecting if image hello-world is present
+        community.docker.docker_image_info:
+          name: hello-world
+        register: DOCKER_IMAGE_OUTPUT
+        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING
+
+      - name: Verifying that the user can run docker commands
+        ansible.builtin.command:
+          cmd: /usr/bin/docker run hello-world
+        register: DOCKER_RUN_OUTPUT
+        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING and (DOCKER_IMAGE_OUTPUT['images'] | length == 0)
+
+      - name: Printing the output of "docker run hello-world"
+        ansible.builtin.debug:
+          var: DOCKER_RUN_OUTPUT['stderr_lines'] + DOCKER_RUN_OUTPUT['stdout_lines']
+        when: DOCKER_RUN_OUTPUT['changed']
