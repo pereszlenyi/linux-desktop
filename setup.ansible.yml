@@ -12,6 +12,9 @@
         "unattended-upgrades",
         "snapd"
       ]
+      CONTAINERIZATION_SERVICES:
+        - docker.service
+        - containerd.service
 
     tasks:
 
@@ -171,7 +174,8 @@
         ansible.builtin.service:
           name: '{{ item }}'
           state: started
-        with_items: '{{ REQUIRED_SYSTEMD_SERVICES }}'
+          enabled: yes
+        with_items: '{{ REQUIRED_SYSTEMD_SERVICES + (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}'
         when: SYSTEMD_IS_RUNNING
 
       - name: Installing Mozilla Firefox snap
@@ -283,6 +287,13 @@
         ansible.builtin.command: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
         become: yes
         when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
+
+      - name: Installing docker python package
+        ansible.builtin.pip:
+          name: docker
+          extra_args: --upgrade
+          executable: /usr/bin/pip3
+        when: CONTAINERIZATION_TECHS
 
       - name: Inspecting if image hello-world is present
         community.docker.docker_image_info:
