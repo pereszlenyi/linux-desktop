@@ -57,6 +57,7 @@
             - gnupg
             - ca-certificates
             - coreutils
+            - bash-completion
             - aptitude
             - unattended-upgrades
             - snapd
@@ -137,23 +138,37 @@
           executable: /bin/bash
         when: CONTAINERIZATION_TECHS
 
-      - name: Adding Docker's repository
-        ansible.builtin.apt_repository:
-          repo: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
-          filename: docker
-          update_cache: no
+      - name: Downloading the Google Cloud public signing key
+        ansible.builtin.get_url:
+          url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+          dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+          mode: u=rw,g=r,o=r
+          checksum: sha256:3d75e27fc397a5a3f036b9cd6bd7ba83c46e518eaa2d6c962ddaccf0131a01cd
         when: CONTAINERIZATION_TECHS
 
-      - name: Installing Docker
+      - name: Adding repositories for containerization technologies
+        ansible.builtin.apt_repository:
+          repo: "{{ item.value }}"
+          filename: "{{ item.key }}"
+          update_cache: no
+        with_dict:
+          docker: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
+          kubernetes: deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+        when: CONTAINERIZATION_TECHS
+
+      - name: Installing containerization technologies
         ansible.builtin.apt:
           update_cache: yes
           install_recommends: yes
           name:
+            # Docker
             - docker-ce
             - docker-ce-cli
             - containerd.io
             - docker-buildx-plugin
             - docker-compose-plugin
+            # Kubernetes
+            - kubectl
           state: latest
         when: CONTAINERIZATION_TECHS
 

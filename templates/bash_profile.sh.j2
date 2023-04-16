@@ -19,3 +19,8 @@ alias git_push='/usr/bin/git push --quiet'
 /usr/bin/git config --global diff.tool meld
 /usr/bin/git config --global gpg.format ssh
 /usr/bin/git config --global user.signingkey ~/.ssh/{{ SSH_KEY_FILENAME }}.pub
+{% if CONTAINERIZATION_TECHS %}
+
+# Enabling kubectl autocompletion
+source <(/usr/bin/kubectl completion bash)
+{% endif %}
