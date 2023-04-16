@@ -210,6 +210,12 @@
         when: SYSTEMD_IS_RUNNING
         tags: java
 
+      - name: Installing Helm
+        community.general.snap:
+          name: helm
+          classic: true
+        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING
+
       - name: Creating /etc/wsl.conf from template wsl.conf.j2
         ansible.builtin.template:
           src: ./templates/wsl.conf.j2
