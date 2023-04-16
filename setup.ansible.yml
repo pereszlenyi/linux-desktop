@@ -8,10 +8,9 @@
         x86_64: amd64
       ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
       HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
-      REQUIRED_SYSTEMD_SERVICES: [
-        "unattended-upgrades",
-        "snapd"
-      ]
+      REQUIRED_SYSTEMD_SERVICES:
+        - unattended-upgrades
+        - snapd
       CONTAINERIZATION_SERVICES:
         - docker.service
         - containerd.service
@@ -28,12 +27,18 @@
 
       - name: Setting variables
         ansible.builtin.set_fact:
-          SYSTEMD_IS_RUNNING: "{{ ansible_facts.services['systemd-logind.service'] is defined }}"
+          SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
           CONTAINERIZATION_TECHS: "{{ INSTALL_CONTAINERIZATION_TECHS is defined and INSTALL_CONTAINERIZATION_TECHS == 'true' }}"
+
+      - name: Exiting if we were not able to determine the architecture
+        ansible.builtin.fail:
+          msg: "Can't find an alias for architecture '{{ ansible_facts['architecture'] }}'."
+        when: CONTAINERIZATION_TECHS and (ansible_facts['architecture'] not in ARCHITECTURE_ALIAS)
 
       - name: Adding a PPA that provides the latest stable upstream Git version
         ansible.builtin.apt_repository:
           repo: ppa:git-core/ppa
+          update_cache: no
 
       - name: Updating system
         ansible.builtin.apt:
@@ -266,7 +271,7 @@
 
       - name: Printing the output of GPG setup
         ansible.builtin.debug:
-          var: GPG_OUTPUT.stdout_lines
+          var: GPG_OUTPUT['stdout_lines']
         tags: gpg
 
       - name: Creating ~/bash_profile.sh from template bash_profile.sh.j2
@@ -311,3 +316,8 @@
         ansible.builtin.debug:
           var: DOCKER_RUN_OUTPUT['stderr_lines'] + DOCKER_RUN_OUTPUT['stdout_lines']
         when: DOCKER_RUN_OUTPUT['changed']
+
+      - name: Printing message about systemd
+        ansible.builtin.debug:
+          msg: It seems that Ubuntu was not started with systemd. This means that some tasks were skipped. Run this Ansible playbook again after restarting WSL.
+        when: not SYSTEMD_IS_RUNNING
