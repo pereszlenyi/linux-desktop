@@ -131,11 +131,14 @@
           state: absent
         when: CONTAINERIZATION_TECHS
 
-      - name: Adding Docker's official GPG key
+      - name: Adding GPG keys from apt_keyrings
         ansible.builtin.shell:
-          cmd: /usr/bin/gpg --dearmor --output /etc/apt/keyrings/docker.gpg <./apt_keyrings/docker.txt
-          creates: /etc/apt/keyrings/docker.gpg
+          cmd: /usr/bin/gpg --dearmor --output /etc/apt/keyrings/{{ item }}.gpg <./apt_keyrings/{{ item }}.txt
+          creates: /etc/apt/keyrings/{{ item }}.gpg
           executable: /bin/bash
+        loop:
+          - docker
+          - microsoft
         when: CONTAINERIZATION_TECHS
 
       - name: Downloading the Google Cloud public signing key
@@ -154,6 +157,7 @@
         with_dict:
           docker: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
           kubernetes: deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+          azure-cli: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts['distribution_release'] }} main
         when: CONTAINERIZATION_TECHS
 
       - name: Installing containerization technologies
@@ -169,6 +173,8 @@
             - docker-compose-plugin
             # Kubernetes
             - kubectl
+            # Azure CLI
+            - azure-cli
           state: latest
         when: CONTAINERIZATION_TECHS
 
