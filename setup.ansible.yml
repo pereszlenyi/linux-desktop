@@ -1,13 +1,10 @@
 ---
-  - name: Systemwide changes
+  - name: Collecting information and checking system
     hosts: localhost
     connection: local
-    become: yes
     vars:
       ARCHITECTURE_ALIAS:
         x86_64: amd64
-      ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
-      HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
       REQUIRED_SYSTEMD_SERVICES:
         - unattended-upgrades
         - snapd
@@ -25,8 +22,10 @@
       - name: Populating service facts
         ansible.builtin.service_facts:
 
-      - name: Setting variables
+      - name: Setting system variables
         ansible.builtin.set_fact:
+          ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
+          HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
           SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
           CONTAINERIZATION_TECHS: "{{ INSTALL_CONTAINERIZATION_TECHS is defined and INSTALL_CONTAINERIZATION_TECHS == 'true' }}"
 
@@ -34,6 +33,17 @@
         ansible.builtin.fail:
           msg: "Can't find an alias for architecture '{{ ansible_facts['architecture'] }}'."
         when: CONTAINERIZATION_TECHS and (ansible_facts['architecture'] not in ARCHITECTURE_ALIAS)
+
+      - name: Setting playbook variables
+        ansible.builtin.set_fact:
+          SYSTEMD_SERVICES: "{{ REQUIRED_SYSTEMD_SERVICES + (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}"
+
+  - name: Systemwide changes
+    hosts: localhost
+    connection: local
+    become: yes
+
+    tasks:
 
       - name: Adding a PPA that provides the latest stable upstream Git version
         ansible.builtin.apt_repository:
@@ -72,6 +82,7 @@
             - colordiff
             - build-essential
             - cmake
+            - p7zip-full
             # Fonts
             - fonts-noto
             - fonts-recommended
@@ -201,7 +212,7 @@
           name: '{{ item }}'
           state: started
           enabled: yes
-        with_items: '{{ REQUIRED_SYSTEMD_SERVICES + (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}'
+        with_items: '{{ SYSTEMD_SERVICES }}'
         when: SYSTEMD_IS_RUNNING
 
       - name: Installing Mozilla Firefox snap
@@ -318,6 +329,7 @@
       - name: Setting the full name in /etc/passwd
         ansible.builtin.command: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
         become: yes
+        ignore_errors: yes
         when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
 
       - name: Installing docker python package
