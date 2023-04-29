@@ -5,12 +5,33 @@
     vars:
       ARCHITECTURE_ALIAS:
         x86_64: amd64
+      JAVA_PACKAGES:
+        - default-jdk
+        - default-jdk-doc
+        - maven
+      CONTAINERIZATION_PACKAGES:
+        # Docker
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+        # Kubernetes
+        - kubectl
+        # Azure CLI
+        - azure-cli
       REQUIRED_SYSTEMD_SERVICES:
         - unattended-upgrades
         - snapd
       CONTAINERIZATION_SERVICES:
         - docker.service
         - containerd.service
+      REQUIRED_SNAPS:
+        - firefox
+      JAVA_CLASSIC_SNAPS:
+        - intellij-idea-community
+      CONTAINERIZATION_CLASSIC_SNAPS:
+        - helm
 
     tasks:
 
@@ -36,7 +57,16 @@
 
       - name: Setting playbook variables
         ansible.builtin.set_fact:
-          SYSTEMD_SERVICES: "{{ REQUIRED_SYSTEMD_SERVICES + (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}"
+          ADDITIONAL_PACKAGES: >
+            {{ JAVA_PACKAGES +
+            (CONTAINERIZATION_PACKAGES if CONTAINERIZATION_TECHS else []) }}
+          SYSTEMD_SERVICES: >
+            {{ REQUIRED_SYSTEMD_SERVICES +
+            (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}
+          SNAPS: '{{ REQUIRED_SNAPS }}'
+          CLASSIC_SNAPS: >
+            {{ JAVA_CLASSIC_SNAPS +
+            (CONTAINERIZATION_CLASSIC_SNAPS if CONTAINERIZATION_TECHS else []) }}
 
   - name: Systemwide changes
     hosts: localhost
@@ -113,18 +143,6 @@
           state: directory
           mode: u=rwx,g=rx,o=rx
 
-      - name: Installing packages for Java
-        ansible.builtin.apt:
-          cache_valid_time: 600
-          update_cache: yes
-          install_recommends: yes
-          name:
-            - default-jdk
-            - default-jdk-doc
-            - maven
-          state: latest
-        tags: java
-
       - name: Removing Mozilla Firefox deb package
         ansible.builtin.apt:
           name: firefox
@@ -171,23 +189,12 @@
           azure-cli: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts['distribution_release'] }} main
         when: CONTAINERIZATION_TECHS
 
-      - name: Installing containerization technologies
+      - name: Installing additional packages
         ansible.builtin.apt:
           update_cache: yes
           install_recommends: yes
-          name:
-            # Docker
-            - docker-ce
-            - docker-ce-cli
-            - containerd.io
-            - docker-buildx-plugin
-            - docker-compose-plugin
-            # Kubernetes
-            - kubectl
-            # Azure CLI
-            - azure-cli
+          name: '{{ ADDITIONAL_PACKAGES }}'
           state: latest
-        when: CONTAINERIZATION_TECHS
 
       - name: Cleaning the local apt cache
         ansible.builtin.apt:
@@ -215,23 +222,18 @@
         with_items: '{{ SYSTEMD_SERVICES }}'
         when: SYSTEMD_IS_RUNNING
 
-      - name: Installing Mozilla Firefox snap
+      - name: Installing snaps
         community.general.snap:
-          name: firefox
+          name: '{{ item }}'
+        loop: '{{ SNAPS }}'
         when: SYSTEMD_IS_RUNNING
 
-      - name: Installing IntelliJ IDEA Community Edition
+      - name: Installing classic snaps
         community.general.snap:
-          name: intellij-idea-community
+          name: '{{ item }}'
           classic: true
+        loop: '{{ CLASSIC_SNAPS }}'
         when: SYSTEMD_IS_RUNNING
-        tags: java
-
-      - name: Installing Helm
-        community.general.snap:
-          name: helm
-          classic: true
-        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING
 
       - name: Creating /etc/wsl.conf from template wsl.conf.j2
         ansible.builtin.template:
