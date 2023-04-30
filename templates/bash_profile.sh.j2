@@ -18,7 +18,8 @@ alias git_push='/usr/bin/git push --quiet'
 /usr/bin/git config --global core.autocrlf input
 /usr/bin/git config --global diff.tool meld
 /usr/bin/git config --global gpg.format ssh
-/usr/bin/git config --global user.signingkey ~/.ssh/{{ SSH_KEY_FILENAME }}.pub
+/usr/bin/git config --global user.signingkey "~/.ssh/{{ SSH_KEY_FILENAME }}.pub"
+/usr/bin/git config --global credential.helper "cache --timeout=36000"
 {% if CONTAINERIZATION_TECHS %}
 
 # Enabling kubectl autocompletion
