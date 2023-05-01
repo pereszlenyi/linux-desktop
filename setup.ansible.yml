@@ -11,7 +11,7 @@
         - docker
         - microsoft
       REQUIRED_REPOSITORIES:
-        google-chrome: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main
+        google-chrome: deb [arch={{ ARCHITECTURE }}] https://dl.google.com/linux/chrome/deb/ stable main
       CONTAINERIZATION_REPOSITORIES:
         docker: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
         kubernetes: deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
@@ -192,6 +192,15 @@
           path: /etc/apt/keyrings/{{ item }}.gpg
           mode: u=rw,g=r,o=r
         loop: '{{ APT_KEYRINGS }}'
+
+      # Google Chrome needs its GPG key in /etc/apt/trusted.gpg.d/.
+      # Hopefully, this will change.
+      - name: Copying google-chrome.gpg to /etc/apt/trusted.gpg.d/
+        ansible.builtin.copy:
+          src: /etc/apt/keyrings/google-chrome.gpg
+          dest: /etc/apt/trusted.gpg.d/google-chrome.gpg
+          mode: u=rw,g=r,o=r
+          remote_src: yes
 
       - name: Downloading the Google Cloud public signing key
         ansible.builtin.get_url:
