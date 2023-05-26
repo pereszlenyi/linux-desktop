@@ -7,9 +7,11 @@
         x86_64: amd64
       REQUIRED_PPAS:
         # Git
-        - ppa:git-core/ppa
+        - ppa: ppa:git-core/ppa
+          filename: git-core-ubuntu-ppa
         # Ansible
-        - ppa:ansible/ansible
+        - ppa: ppa:ansible/ansible
+          filename: ansible-ubuntu-ansible
       REQUIRED_APT_KEYRINGS:
         - google-chrome
       CONTAINERIZATION_APT_KEYRINGS:
@@ -101,9 +103,9 @@
     tasks:
 
       - name: Adding PPAs
-        ansible.builtin.apt_repository:
-          repo: '{{ item }}'
-          update_cache: no
+        ansible.builtin.command:
+          cmd: /usr/bin/add-apt-repository --yes "{{ item['ppa'] }}"
+          creates: /etc/apt/sources.list.d/{{ item['filename'] }}-{{ ansible_facts['distribution_release'] }}.list
         loop: '{{ PPAS }}'
 
       - name: Updating system
