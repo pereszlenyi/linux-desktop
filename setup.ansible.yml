@@ -5,6 +5,11 @@
     vars:
       ARCHITECTURE_ALIAS:
         x86_64: amd64
+      REQUIRED_PPAS:
+        # Git
+        - ppa:git-core/ppa
+        # Ansible
+        - ppa:ansible/ansible
       REQUIRED_APT_KEYRINGS:
         - google-chrome
       CONTAINERIZATION_APT_KEYRINGS:
@@ -70,6 +75,7 @@
 
       - name: Setting playbook variables
         ansible.builtin.set_fact:
+          PPAS: '{{ REQUIRED_PPAS }}'
           APT_KEYRINGS: >
             {{ REQUIRED_APT_KEYRINGS +
             (CONTAINERIZATION_APT_KEYRINGS if CONTAINERIZATION_TECHS else []) }}
@@ -94,10 +100,11 @@
 
     tasks:
 
-      - name: Adding a PPA that provides the latest stable upstream Git version
+      - name: Adding PPAs
         ansible.builtin.apt_repository:
-          repo: ppa:git-core/ppa
+          repo: '{{ item }}'
           update_cache: no
+        loop: '{{ PPAS }}'
 
       - name: Updating system
         ansible.builtin.apt:
@@ -112,7 +119,6 @@
           install_recommends: yes
           name:
             - ansible
-            - ansible-doc
             - gnupg
             - ca-certificates
             - coreutils
