@@ -58,6 +58,18 @@
         - template: geany.conf
           target_filename: geany.conf
           target_directory: ~/.config/geany
+        - template: geany.addons.conf
+          target_filename: addons.conf
+          target_directory: ~/.config/geany/plugins/addons
+        - template: geany.autoclose.conf
+          target_filename: autoclose.conf
+          target_directory: ~/.config/geany/plugins/autoclose
+        - template: geany.git-changebar.conf
+          target_filename: git-changebar.conf
+          target_directory: ~/.config/geany/plugins/git-changebar
+        - template: geany.overview.conf
+          target_filename: prefs.conf
+          target_directory: ~/.config/geany/plugins/overview
         - template: geany.spellcheck.conf
           target_filename: spellcheck.conf
           target_directory: ~/.config/geany/plugins/spellcheck
