@@ -53,6 +53,11 @@
         - intellij-idea-community
       CONTAINERIZATION_CLASSIC_SNAPS:
         - helm
+      REQUIRED_CONFIGURATION_FILES:
+        # Geany
+        - template: geany.conf
+          target_filename: geany.conf
+          target_directory: ~/.config/geany
 
     tasks:
 
@@ -95,6 +100,7 @@
           CLASSIC_SNAPS: >
             {{ JAVA_CLASSIC_SNAPS +
             (CONTAINERIZATION_CLASSIC_SNAPS if CONTAINERIZATION_TECHS else []) }}
+          CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
 
   - name: Systemwide changes
     hosts: localhost
@@ -357,6 +363,21 @@
           line: . ~/bash_profile.sh
           backup: yes
         tags: bash_profile.sh
+
+      - name: Creating directories for configuration files
+        ansible.builtin.file:
+          path: "{{ item['target_directory'] }}"
+          state: directory
+          mode: u=rwx,g=,o=
+        loop: '{{ CONFIGURATION_FILES }}'
+
+      - name: Creating configuration files from templates
+        ansible.builtin.template:
+          src: ./templates/{{ item['template'] }}.j2
+          dest: "{{ item['target_directory'] }}/{{ item['target_filename'] }}"
+          mode: u=rw,g=,o=
+          force: no
+        loop: '{{ CONFIGURATION_FILES }}'
 
       - name: Setting the full name in /etc/passwd
         ansible.builtin.command: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
