@@ -17,6 +17,7 @@
       CONTAINERIZATION_APT_KEYRINGS:
         - docker
         - microsoft
+        - kubernetes-archive-keyring
       REQUIRED_REPOSITORIES:
         google-chrome: deb [arch={{ ARCHITECTURE }}] https://dl.google.com/linux/chrome/deb/ stable main
       CONTAINERIZATION_REPOSITORIES:
@@ -209,14 +210,6 @@
           dest: /etc/apt/trusted.gpg.d/google-chrome.gpg
           mode: u=rw,g=r,o=r
           remote_src: yes
-
-      - name: Downloading the Google Cloud public signing key
-        ansible.builtin.get_url:
-          url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-          dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-          mode: u=rw,g=r,o=r
-          checksum: sha256:3d75e27fc397a5a3f036b9cd6bd7ba83c46e518eaa2d6c962ddaccf0131a01cd
-        when: CONTAINERIZATION_TECHS
 
       - name: Adding repositories
         ansible.builtin.apt_repository:
