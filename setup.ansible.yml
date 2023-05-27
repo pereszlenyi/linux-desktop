@@ -241,6 +241,7 @@
           groups: docker
           append: yes
         notify: "reboot required"
+        register: ADD_USER_TO_DOCKER_OUTPUT
         when: CONTAINERIZATION_TECHS
 
       - name: Starting services if they are not running
@@ -370,24 +371,31 @@
           executable: /usr/bin/pip3
         when: CONTAINERIZATION_TECHS
 
-      - name: Inspecting if image hello-world is present
-        community.docker.docker_image_info:
-          name: hello-world
-        register: DOCKER_IMAGE_OUTPUT
-        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING
-
       - name: Verifying that the user can run docker commands
-        ansible.builtin.command:
-          cmd: /usr/bin/docker run hello-world
-        register: DOCKER_RUN_OUTPUT
-        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING and (DOCKER_IMAGE_OUTPUT['images'] | length == 0)
+        block:
+          - name: Inspecting if image hello-world is present
+            community.docker.docker_image_info:
+              name: hello-world
+            register: DOCKER_IMAGE_OUTPUT
 
-      - name: Printing the output of "docker run hello-world"
-        ansible.builtin.debug:
-          var: DOCKER_RUN_OUTPUT['stderr_lines'] + DOCKER_RUN_OUTPUT['stdout_lines']
-        when: DOCKER_RUN_OUTPUT['changed']
+          - name: Executing "docker run hello-world"
+            ansible.builtin.command:
+              cmd: /usr/bin/docker run hello-world
+            register: DOCKER_RUN_OUTPUT
+            when: DOCKER_IMAGE_OUTPUT['images'] | length == 0
+
+          - name: Printing the output of "docker run hello-world"
+            ansible.builtin.debug:
+              var: DOCKER_RUN_OUTPUT['stderr_lines'] + DOCKER_RUN_OUTPUT['stdout_lines']
+            when: DOCKER_RUN_OUTPUT['changed']
+        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING and not ADD_USER_TO_DOCKER_OUTPUT['changed']
 
       - name: Printing message about systemd
         ansible.builtin.debug:
           msg: It seems that Ubuntu was not started with systemd. This means that some tasks were skipped. Run this Ansible playbook again after restarting WSL.
         when: not SYSTEMD_IS_RUNNING
+
+      - name: Printing message about Docker
+        ansible.builtin.debug:
+          msg: Docker was installed. In order to verify that the user can run docker commands, run this Ansible playbook again after restarting WSL.
+        when: ADD_USER_TO_DOCKER_OUTPUT['changed']
