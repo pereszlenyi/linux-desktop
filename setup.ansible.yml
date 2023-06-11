@@ -73,6 +73,10 @@
         - template: geany.spellcheck.conf
           target_filename: spellcheck.conf
           target_directory: ~/.config/geany/plugins/spellcheck
+        # Enchant
+        - template: enchant_dictionary_en_US
+          target_filename: en_US.dic
+          target_directory: ~/.config/enchant
 
     tasks:
 
