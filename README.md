@@ -67,7 +67,7 @@ It is important that the version is 2.
 ### Use this Repo in Ubuntu
 
 Finally, open an Ubuntu terminal.
-(Again, preferably in Windows Terminal.)
+(Again, preferably in [Windows Terminal](#windows-terminal).)
 Go to a directory where you want this repo to be saved.
 You can also just stay in your home directory.
 The following command will clone this repository and start the installation and setup:
@@ -76,5 +76,54 @@ The following command will clone this repository and start the installation and 
 git clone --quiet https://github.com/pereszlenyi/wsl.git && ./wsl/install.sh
 ~~~
 
-It will ask your password 2 or 3 times because some of the steps are run as root.
-When running for the first time, it will ask for your name and email which will be used to configure git.
+It will ask your password one or two times because some of the steps are run as root.
+When you run for the first time, it will output:
+
+~~~
+$ git clone --quiet https://github.com/pereszlenyi/wsl.git && ./wsl/install.sh
+=== Setting up your Linux system ===
+
+=== Installing Ansible ===
+[sudo] password for pereszlenyi:
+~~~
+
+Later, it will ask for your name and email which will be used to configure Git.
+If everything goes well, you will see the following line printed.
+
+~~~
+=== Install was SUCCESSFUL ===
+~~~
+
+If this was the first time running the script, it will likely ask you to restart WSL:
+
+~~~
+=== Install was SUCCESSFUL ===
+
+You have to shut down and restart WSL for the changes to take effect.
+Do you want to shut down WSL now? [yes/no]:
+~~~
+
+Do so, then after restart, execute [`install.sh`](install.sh) again.
+This will complete the installation.
+
+## Features
+
+Below is a list of what the above steps do for your system.
+
+### Systemwide Changes
+
+* Your Ubuntu packages are updated to the latest version.
+  In fact, you can use [`install.sh`](install.sh) later to update Ubuntu.
+* A bunch of software are installed, such as [Firefox](https://www.mozilla.org/en-US/firefox/new/), [Google Chrome](https://www.google.com/chrome/), [Geany](https://www.geany.org/), [Meld](https://meldmerge.org/), etc.
+  * If you selected to install containerization technologies, then [Docker Engine](https://docs.docker.com/engine/install/ubuntu/), [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/), [Helm](https://helm.sh/), [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt) are also installed.
+* The hostname is set in `/etc/wsl.conf` to show the Ubuntu release number.
+
+### Changes for the User
+
+* An SSH key is created for [GitHub](https://github.com/) and also for signing Git commits.
+* The SSH client is configured and SSH key fingerprints of GitHub are added to `known_hosts`.
+* GPG is set up and Ubuntu's key is imported.
+* [Git is configured.](templates/bash_profile.sh.j2)
+* Useful [aliases](templates/bash_profile.sh.j2) and [scripts](scripts) are provided.
+* Configurations are set for some of the installed applications, e.g., for Geany.
+* If you selected to install containerization technologies, then it is verified that the user can run Docker commands.
