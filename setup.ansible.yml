@@ -157,7 +157,11 @@
             - git
             - openssh-client
             - joe
+            - bat
             - mc
+            - ncdu
+            - fd-find
+            - ytree
             - tofrodos
             - python3-pip
             - finger
@@ -166,6 +170,9 @@
             - build-essential
             - cmake
             - p7zip-full
+            - makepasswd
+            - neofetch
+            - screenfetch
             # Fonts
             - fonts-noto
             - fonts-recommended
@@ -180,6 +187,7 @@
             - fonts-monoid-loose
             - fonts-monoid-tight
             - fonts-liberation
+            - fonts-inconsolata
             # GUI applications
             - gitk
             - geany

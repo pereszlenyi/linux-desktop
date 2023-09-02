@@ -5,12 +5,28 @@ export EMAIL="{{ EMAIL }}"
 
 alias l='/usr/bin/ls -lah'
 alias less='/usr/bin/less --quit-if-one-screen --LINE-NUMBERS'
+alias bat='/usr/bin/batcat'
+alias fd='/usr/bin/fdfind'
+alias ncdu='/usr/bin/ncdu -rr --color dark -x'
 alias diff='/usr/bin/colordiff'
 alias joe='/usr/bin/joe -beep -keepup -autoindent -highlight -linums -smartbacks -smarthome -wordwrap'
-alias upgrade_system='/usr/bin/sudo /usr/bin/aptitude update && /usr/bin/sudo /usr/bin/aptitude full-upgrade'
+alias neofetch='/usr/bin/neofetch --memory_percent on --color_blocks off'
+alias screenfetch="/usr/bin/screenfetch -d '-disk'"
+
+# Updates all packages in the system
+alias upgrade_system='/usr/bin/sudo /bin/bash -c \
+	"/usr/bin/aptitude update && /usr/bin/aptitude full-upgrade && /usr/bin/aptitude autoclean \
+	&& /usr/bin/snap refresh"'
 alias verify_ubuntu_iso='{{ ansible_facts['env']['PWD'] }}/scripts/verify_ubuntu_iso.sh'
+
+# Signed commit
 alias git_commit='/usr/bin/git commit -S'
+# Push with reduced verbosity
 alias git_push='/usr/bin/git push --quiet'
+# Prints all the details of the commits
+alias git_log_raw='/usr/bin/git log --format=raw --no-abbrev-commit --patch --unified=0'
+# Fetches updates from the remote repo before printing status
+alias git_status='/usr/bin/git fetch --quiet && /usr/bin/git status'
 
 /usr/bin/git config --global user.name "$FULLNAME"
 /usr/bin/git config --global user.email "$EMAIL"
@@ -20,6 +36,7 @@ alias git_push='/usr/bin/git push --quiet'
 /usr/bin/git config --global gpg.format ssh
 /usr/bin/git config --global user.signingkey "~/.ssh/{{ SSH_KEY_FILENAME }}.pub"
 /usr/bin/git config --global credential.helper "cache --timeout=36000"
+/usr/bin/git config --global init.defaultBranch main
 {% if CONTAINERIZATION_TECHS %}
 
 # Enabling kubectl autocompletion
