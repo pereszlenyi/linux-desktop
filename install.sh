@@ -39,16 +39,18 @@ done
 $ECHO "=== Setting up your Linux system ==="
 $ECHO ""
 
-check_ansible || ($ECHO "=== Installing Ansible ===" && \
-	$SUDO $APTGET update && \
-	$SUDO $APTGET --assume-yes --fix-broken install && \
-	$SUDO $APTGET --assume-yes dist-upgrade && \
-	$SUDO $ADD_APT_REPO --yes --update ppa:ansible/ansible && \
-	$SUDO $APTGET --assume-yes install ansible aptitude && \
-	$SUDO $APTGET --assume-yes autoremove && \
-	$SUDO $APTGET --assume-yes clean && \
-	$ECHO "=== Ansible is installed ===" && \
-	$ECHO "")
+INSTALL_COMMAND="$ECHO \"=== Installing Ansible ===\" && \
+	$APTGET update && \
+	$APTGET --assume-yes --fix-broken install && \
+	$APTGET --assume-yes dist-upgrade && \
+	$ADD_APT_REPO --yes --update ppa:ansible/ansible && \
+	$APTGET --assume-yes install ansible aptitude && \
+	$APTGET --assume-yes autoremove && \
+	$APTGET --assume-yes clean && \
+	$ECHO \"=== Ansible is installed ===\" && \
+	$ECHO \"\""
+
+check_ansible || $SUDO /bin/bash -c "$INSTALL_COMMAND"
 check_ansible || die "Ansible is not installed."
 
 $ECHO "The following information will be used to configure Git."
