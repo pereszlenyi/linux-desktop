@@ -13,11 +13,16 @@ alias joe='/usr/bin/joe -beep -keepup -autoindent -highlight -linums -smartbacks
 alias neofetch='/usr/bin/neofetch --memory_percent on --color_blocks off'
 alias screenfetch="/usr/bin/screenfetch -d '-disk'"
 
+# Pulls the updates from the Git repository then runs the install script.
+alias run_install_script='/bin/bash -c \
+	"cd {{ CURRENT_DIRECTORY }} && \
+	/usr/bin/git pull --quiet && \
+	./install.sh"'
 # Updates all packages in the system
 alias upgrade_system='/usr/bin/sudo /bin/bash -c \
 	"/usr/bin/aptitude update && /usr/bin/aptitude full-upgrade && /usr/bin/aptitude autoclean \
 	&& /usr/bin/snap refresh"'
-alias verify_ubuntu_iso='{{ ansible_facts['env']['PWD'] }}/scripts/verify_ubuntu_iso.sh'
+alias verify_ubuntu_iso='{{ CURRENT_DIRECTORY }}/scripts/verify_ubuntu_iso.sh'
 
 # Signed commit
 alias git_commit='/usr/bin/git commit -S'

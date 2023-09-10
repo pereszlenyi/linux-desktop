@@ -92,6 +92,7 @@
         ansible.builtin.set_fact:
           ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
           HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
+          CURRENT_DIRECTORY: "{{ ansible_facts['env']['PWD'] }}"
           SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
           CONTAINERIZATION_TECHS: "{{ INSTALL_CONTAINERIZATION_TECHS is defined and INSTALL_CONTAINERIZATION_TECHS == 'true' }}"
 
@@ -440,10 +441,10 @@
 
       - name: Printing message about systemd
         ansible.builtin.debug:
-          msg: It seems that Ubuntu was not started with systemd. This means that some tasks were skipped. Run this Ansible playbook again after restarting WSL.
+          msg: It seems that Ubuntu was not started with systemd. This means that some tasks were skipped. Run 'run_install_script' after restarting WSL.
         when: not SYSTEMD_IS_RUNNING
 
       - name: Printing message about Docker
         ansible.builtin.debug:
-          msg: Docker was installed. In order to verify that the user can run docker commands, run this Ansible playbook again after restarting WSL.
+          msg: Docker was installed. In order to verify that the user can run docker commands, run 'run_install_script' after restarting WSL.
         when: ADD_USER_TO_DOCKER_OUTPUT['changed']
