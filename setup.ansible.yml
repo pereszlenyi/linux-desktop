@@ -286,10 +286,27 @@
         with_items: '{{ SYSTEMD_SERVICES }}'
         when: SYSTEMD_IS_RUNNING
 
+      - name: Updating existing snaps
+        block:
+          - name: Checking for snaps to update
+            ansible.builtin.command:
+              cmd: /usr/bin/snap refresh --list
+            register: SNAPS_TO_UPDATE
+            changed_when: false
+            tags: snap
+
+          - name: Refreshing snaps
+            ansible.builtin.command:
+              cmd: /usr/bin/snap refresh
+            tags: snap
+            when: SNAPS_TO_UPDATE['stdout_lines'] | length >= 2
+        when: SYSTEMD_IS_RUNNING
+
       - name: Installing snaps
         community.general.snap:
           name: '{{ item }}'
         loop: '{{ SNAPS }}'
+        tags: snap
         when: SYSTEMD_IS_RUNNING
 
       - name: Installing classic snaps
@@ -297,6 +314,7 @@
           name: '{{ item }}'
           classic: true
         loop: '{{ CLASSIC_SNAPS }}'
+        tags: snap
         when: SYSTEMD_IS_RUNNING
 
       - name: Creating /etc/wsl.conf from template wsl.conf.j2
