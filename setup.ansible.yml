@@ -19,11 +19,15 @@
         - microsoft
         - kubernetes-archive-keyring
       REQUIRED_REPOSITORIES:
-        google-chrome: deb [arch={{ ARCHITECTURE }}] https://dl.google.com/linux/chrome/deb/ stable main
+        - filename: google-chrome
+          repository: deb [arch={{ ARCHITECTURE }}] https://dl.google.com/linux/chrome/deb/ stable main
       CONTAINERIZATION_REPOSITORIES:
-        docker: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
-        kubernetes: deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
-        azure-cli: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts['distribution_release'] }} main
+        - filename: docker
+          repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
+        - filename: kubernetes
+          repository: deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+        - filename: azure-cli
+          repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts['distribution_release'] }} main
       REQUIRED_PACKAGES:
         - google-chrome-stable
       JAVA_PACKAGES:
@@ -108,8 +112,8 @@
             {{ REQUIRED_APT_KEYRINGS +
             (CONTAINERIZATION_APT_KEYRINGS if CONTAINERIZATION_TECHS else []) }}
           REPOSITORIES: >
-            {{ dict(REQUIRED_REPOSITORIES,
-            **(CONTAINERIZATION_REPOSITORIES if CONTAINERIZATION_TECHS else {})) }}
+            {{ REQUIRED_REPOSITORIES +
+            (CONTAINERIZATION_REPOSITORIES if CONTAINERIZATION_TECHS else []) }}
           ADDITIONAL_PACKAGES: >
             {{ REQUIRED_PACKAGES + JAVA_PACKAGES +
             (CONTAINERIZATION_PACKAGES if CONTAINERIZATION_TECHS else []) }}
@@ -247,10 +251,10 @@
 
       - name: Adding repositories
         ansible.builtin.apt_repository:
-          repo: "{{ item.value }}"
-          filename: "{{ item.key }}"
+          repo: "{{ item['repository'] }}"
+          filename: "{{ item['filename'] }}"
           update_cache: no
-        with_dict: "{{ REPOSITORIES }}"
+        loop: '{{ REPOSITORIES }}'
 
       - name: Installing additional packages
         ansible.builtin.apt:
