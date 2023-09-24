@@ -71,9 +71,17 @@ if ./scripts/yes_or_no.sh \
 fi
 $ECHO ""
 
+INSTALL_JAVA_TOOLS=false
+if ./scripts/yes_or_no.sh \
+	"Do you want to develop in Java?" ; then
+	INSTALL_JAVA_TOOLS=true
+fi
+$ECHO ""
+
 $ECHO "=== Running Ansible playbook ==="
 $ANSIBLE ./setup.ansible.yml --ask-become-pass \
 	--extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\" \
+	INSTALL_JAVA_TOOLS=\"$INSTALL_JAVA_TOOLS\" \
 	INSTALL_CONTAINERIZATION_TECHS=\"$INSTALL_CONTAINERIZATION_TECHS\"" && \
 $ECHO "=== Install was SUCCESSFUL ===" || \
 die "Failed to run Ansible playbook. You can try shutting down and restarting WSL (by \"wsl.exe --shutdown\") then running $0 again."

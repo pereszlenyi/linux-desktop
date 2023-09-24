@@ -99,6 +99,7 @@
           CURRENT_DIRECTORY: "{{ ansible_facts['env']['PWD'] }}"
           SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
           CONTAINERIZATION_TECHS: "{{ INSTALL_CONTAINERIZATION_TECHS is defined and INSTALL_CONTAINERIZATION_TECHS == 'true' }}"
+          INSTALL_JAVA: "{{ INSTALL_JAVA_TOOLS is defined and INSTALL_JAVA_TOOLS == 'true' }}"
 
       - name: Exiting if we were not able to determine the architecture
         ansible.builtin.fail:
@@ -115,14 +116,16 @@
             {{ REQUIRED_REPOSITORIES +
             (CONTAINERIZATION_REPOSITORIES if CONTAINERIZATION_TECHS else []) }}
           ADDITIONAL_PACKAGES: >
-            {{ REQUIRED_PACKAGES + JAVA_PACKAGES +
+            {{ REQUIRED_PACKAGES +
+            (JAVA_PACKAGES if INSTALL_JAVA else []) +
             (CONTAINERIZATION_PACKAGES if CONTAINERIZATION_TECHS else []) }}
           SYSTEMD_SERVICES: >
             {{ REQUIRED_SYSTEMD_SERVICES +
             (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}
           SNAPS: '{{ REQUIRED_SNAPS }}'
           CLASSIC_SNAPS: >
-            {{ JAVA_CLASSIC_SNAPS +
+            {{ [] +
+            (JAVA_CLASSIC_SNAPS if INSTALL_JAVA else []) +
             (CONTAINERIZATION_CLASSIC_SNAPS if CONTAINERIZATION_TECHS else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
 
