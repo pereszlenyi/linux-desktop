@@ -14,6 +14,8 @@
           filename: ansible-ubuntu-ansible
       REQUIRED_APT_KEYRINGS:
         - google-chrome
+      JAVA_APT_KEYRINGS:
+        - azul
       CONTAINERIZATION_APT_KEYRINGS:
         - docker
         - microsoft
@@ -21,6 +23,9 @@
       REQUIRED_REPOSITORIES:
         - filename: google-chrome
           repository: deb [arch={{ ARCHITECTURE }}] https://dl.google.com/linux/chrome/deb/ stable main
+      JAVA_REPOSITORIES:
+        - filename: zulu
+          repository: deb [signed-by=/etc/apt/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main
       CONTAINERIZATION_REPOSITORIES:
         - filename: docker
           repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
@@ -34,6 +39,7 @@
         - default-jdk
         - default-jdk-doc
         - maven
+        - zulu{{ JDK_VERSION }}-jdk
       CONTAINERIZATION_PACKAGES:
         # Docker
         - docker-ce
@@ -111,9 +117,11 @@
           PPAS: '{{ REQUIRED_PPAS }}'
           APT_KEYRINGS: >
             {{ REQUIRED_APT_KEYRINGS +
+            (JAVA_APT_KEYRINGS if INSTALL_JAVA else []) +
             (CONTAINERIZATION_APT_KEYRINGS if CONTAINERIZATION_TECHS else []) }}
           REPOSITORIES: >
             {{ REQUIRED_REPOSITORIES +
+            (JAVA_REPOSITORIES if INSTALL_JAVA else []) +
             (CONTAINERIZATION_REPOSITORIES if CONTAINERIZATION_TECHS else []) }}
           ADDITIONAL_PACKAGES: >
             {{ REQUIRED_PACKAGES +
@@ -408,6 +416,7 @@
           src: ./templates/bash_profile.sh.j2
           dest: ~/bash_profile.sh
           mode: u=rwx,g=r,o=r
+        register: BASH_PROFILE_SH_OUTPUT
         tags: bash_profile.sh
 
       - name: Adding a line to ~/.bashrc to run ~/bash_profile.sh
@@ -463,6 +472,14 @@
               var: DOCKER_RUN_OUTPUT['stderr_lines'] + DOCKER_RUN_OUTPUT['stdout_lines']
             when: DOCKER_RUN_OUTPUT['changed']
         when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING and not ADD_USER_TO_DOCKER_OUTPUT['changed']
+
+      - name: Verifying the default Java version
+        ansible.builtin.shell:
+          cmd: >
+            java --version | /usr/bin/grep --fixed-strings "openjdk {{ JDK_VERSION }}." && java --version | /usr/bin/grep --fixed-strings "OpenJDK Runtime Environment Zulu{{ JDK_VERSION }}"
+          executable: /bin/bash
+        changed_when: false
+        when: INSTALL_JAVA and not BASH_PROFILE_SH_OUTPUT['changed']
 
       - name: Printing message about systemd
         ansible.builtin.debug:

@@ -42,6 +42,11 @@ alias git_status='/usr/bin/git fetch --quiet && /usr/bin/git status'
 /usr/bin/git config --global user.signingkey "~/.ssh/{{ SSH_KEY_FILENAME }}.pub"
 /usr/bin/git config --global credential.helper "cache --timeout=36000"
 /usr/bin/git config --global init.defaultBranch main
+{% if INSTALL_JAVA %}
+
+export JAVA_HOME="/usr/lib/jvm/zulu{{ JDK_VERSION }}-ca-{{ ARCHITECTURE }}"
+export PATH="${JAVA_HOME}/bin:${PATH}"
+{% endif %}
 {% if CONTAINERIZATION_TECHS %}
 
 # Enabling kubectl autocompletion

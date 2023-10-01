@@ -72,9 +72,12 @@ fi
 $ECHO ""
 
 INSTALL_JAVA_TOOLS=false
+JDK_VERSION=17
 if ./scripts/yes_or_no.sh \
 	"Do you want to develop in Java?" ; then
 	INSTALL_JAVA_TOOLS=true
+	$ECHO "Azul Zulu build of OpenJDK version ${JDK_VERSION} will be installed."
+	$ECHO "If you want to change the version, set variable JDK_VERSION in install.sh."
 fi
 $ECHO ""
 
@@ -82,6 +85,7 @@ $ECHO "=== Running Ansible playbook ==="
 $ANSIBLE ./setup.ansible.yml --ask-become-pass \
 	--extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\" \
 	INSTALL_JAVA_TOOLS=\"$INSTALL_JAVA_TOOLS\" \
+	JDK_VERSION=\"$JDK_VERSION\" \
 	INSTALL_CONTAINERIZATION_TECHS=\"$INSTALL_CONTAINERIZATION_TECHS\"" && \
 $ECHO "=== Install was SUCCESSFUL ===" || \
 die "Failed to run Ansible playbook. You can try shutting down and restarting WSL (by \"wsl.exe --shutdown\") then running $0 again."
