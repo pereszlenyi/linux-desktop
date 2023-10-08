@@ -189,6 +189,9 @@
             - makepasswd
             - neofetch
             - screenfetch
+            - curl
+            - jq
+            - unzip
             # Fonts
             - fonts-noto
             - fonts-recommended
@@ -411,6 +414,61 @@
           var: GPG_OUTPUT['stdout_lines']
         tags: gpg
 
+      - name: Creating directory bin/download if it does not exist
+        ansible.builtin.file:
+          path: "{{ CURRENT_DIRECTORY }}/bin/download"
+          state: directory
+          mode: u=rwx,g=,o=
+
+      - name: Installing Maven locally
+        block:
+          - name: Getting the latest Maven version
+            ansible.builtin.shell:
+              cmd: >
+                /usr/bin/curl --silent --location
+                "https://search.maven.org/solrsearch/select?q=g:org.apache.maven+AND+a:maven-core&core=gav&rows=20&wt=json" |
+                /usr/bin/jq --raw-output '.response.docs | .[].v' |
+                /usr/bin/grep --extended-regexp "^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$" |
+                /usr/bin/head -n 1
+              executable: /bin/bash
+            changed_when: false
+            register: MAVEN_VERSION_COMMAND
+            failed_when: >
+              (MAVEN_VERSION_COMMAND is failed) or
+              (MAVEN_VERSION_COMMAND['stdout_lines'] == [])
+
+          - name: Storing Maven version in a variable
+            ansible.builtin.set_fact:
+              MAVEN_VERSION: "{{ MAVEN_VERSION_COMMAND['stdout'] }}"
+
+          - name: Getting the checksum of the binary archive
+            ansible.builtin.uri:
+              url: https://downloads.apache.org/maven/maven-3/{{ MAVEN_VERSION }}/binaries/apache-maven-{{ MAVEN_VERSION }}-bin.tar.gz.sha512
+              return_content: yes
+            register: MAVEN_CHECKSUM_COMMAND
+            failed_when: >
+              (MAVEN_CHECKSUM_COMMAND is failed) or
+              (MAVEN_CHECKSUM_COMMAND['status'] != 200) or
+              (MAVEN_CHECKSUM_COMMAND['content_length'] != "128")
+
+          - name: Storing the filename of the binary archive in a variable
+            ansible.builtin.set_fact:
+              MAVEN_FILENAME: apache-maven-{{ MAVEN_VERSION }}-bin.tar.gz
+
+          - name: Downloading Maven
+            ansible.builtin.get_url:
+              url: https://dlcdn.apache.org/maven/maven-3/{{ MAVEN_VERSION }}/binaries/{{ MAVEN_FILENAME }}
+              dest: "{{ CURRENT_DIRECTORY }}/bin/download"
+              mode: u=rw,g=,o=
+              checksum: sha512:{{ MAVEN_CHECKSUM_COMMAND['content'] }}
+
+          - name: Unarchive Maven
+            ansible.builtin.unarchive:
+              src: "{{ CURRENT_DIRECTORY }}/bin/download/{{ MAVEN_FILENAME }}"
+              dest: "{{ CURRENT_DIRECTORY }}/bin"
+              remote_src: yes
+        when: INSTALL_JAVA
+
       - name: Creating ~/bash_profile.sh from template bash_profile.sh.j2
         ansible.builtin.template:
           src: ./templates/bash_profile.sh.j2
@@ -476,7 +534,8 @@
       - name: Verifying the default Java version
         ansible.builtin.shell:
           cmd: >
-            java --version | /usr/bin/grep --fixed-strings "openjdk {{ JDK_VERSION }}." && java --version | /usr/bin/grep --fixed-strings "OpenJDK Runtime Environment Zulu{{ JDK_VERSION }}"
+            java --version | /usr/bin/grep --fixed-strings "openjdk {{ JDK_VERSION }}." &&
+            java --version | /usr/bin/grep --fixed-strings "OpenJDK Runtime Environment Zulu{{ JDK_VERSION }}"
           executable: /bin/bash
         changed_when: false
         when: INSTALL_JAVA and not BASH_PROFILE_SH_OUTPUT['changed']

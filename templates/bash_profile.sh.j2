@@ -45,7 +45,7 @@ alias git_status='/usr/bin/git fetch --quiet && /usr/bin/git status'
 {% if INSTALL_JAVA %}
 
 export JAVA_HOME="/usr/lib/jvm/zulu{{ JDK_VERSION }}-ca-{{ ARCHITECTURE }}"
-export PATH="${JAVA_HOME}/bin:${PATH}"
+export PATH="${JAVA_HOME}/bin:{{ CURRENT_DIRECTORY }}/bin/apache-maven-{{ MAVEN_VERSION }}/bin:${PATH}"
 {% endif %}
 {% if CONTAINERIZATION_TECHS %}
 
