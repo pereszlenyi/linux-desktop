@@ -425,7 +425,7 @@
           - name: Getting the latest Maven version
             ansible.builtin.shell:
               cmd: >
-                /usr/bin/curl --silent --location
+                /usr/bin/curl --silent --show-error --fail --retry 5 --location
                 "https://search.maven.org/solrsearch/select?q=g:org.apache.maven+AND+a:maven-core&core=gav&rows=20&wt=json" |
                 /usr/bin/jq --raw-output '.response.docs | .[].v' |
                 /usr/bin/grep --extended-regexp "^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$" |
@@ -435,7 +435,8 @@
             register: MAVEN_VERSION_COMMAND
             failed_when: >
               (MAVEN_VERSION_COMMAND is failed) or
-              (MAVEN_VERSION_COMMAND['stdout_lines'] == [])
+              (MAVEN_VERSION_COMMAND['stdout_lines'] == []) or
+              (MAVEN_VERSION_COMMAND['stderr_lines'] != [])
 
           - name: Storing Maven version in a variable
             ansible.builtin.set_fact:
@@ -443,7 +444,7 @@
 
           - name: Getting the checksum of the binary archive
             ansible.builtin.uri:
-              url: https://downloads.apache.org/maven/maven-3/{{ MAVEN_VERSION }}/binaries/apache-maven-{{ MAVEN_VERSION }}-bin.tar.gz.sha512
+              url: https://downloads.apache.org/maven/maven-{{ MAVEN_VERSION.split('.')[0] }}/{{ MAVEN_VERSION }}/binaries/apache-maven-{{ MAVEN_VERSION }}-bin.tar.gz.sha512
               return_content: yes
             register: MAVEN_CHECKSUM_COMMAND
             failed_when: >
@@ -457,7 +458,7 @@
 
           - name: Downloading Maven
             ansible.builtin.get_url:
-              url: https://dlcdn.apache.org/maven/maven-3/{{ MAVEN_VERSION }}/binaries/{{ MAVEN_FILENAME }}
+              url: https://dlcdn.apache.org/maven/maven-{{ MAVEN_VERSION.split('.')[0] }}/{{ MAVEN_VERSION }}/binaries/{{ MAVEN_FILENAME }}
               dest: "{{ CURRENT_DIRECTORY }}/bin/download"
               mode: u=rw,g=,o=
               checksum: sha512:{{ MAVEN_CHECKSUM_COMMAND['content'] }}
