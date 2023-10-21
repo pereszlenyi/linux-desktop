@@ -81,6 +81,15 @@
         - template: geany.spellcheck.conf
           target_filename: spellcheck.conf
           target_directory: ~/.config/geany/plugins/spellcheck
+        - template: geany.filetypes.CommitMessage.conf
+          target_filename: filetypes.CommitMessage.conf
+          target_directory: ~/.config/geany/filedefs
+        - template: geany.filetypes.GitRebase.conf
+          target_filename: filetypes.GitRebase.conf
+          target_directory: ~/.config/geany/filedefs
+        - template: geany.filetype_extensions.conf
+          target_filename: filetype_extensions.conf
+          target_directory: ~/.config/geany
         # Enchant
         - template: enchant_dictionary_en_US
           target_filename: en_US.dic
@@ -230,6 +239,7 @@
             - fonts-liberation
             - fonts-inconsolata
             # GUI applications
+            - xdg-utils
             - gitk
             - geany
             - geany-plugins
