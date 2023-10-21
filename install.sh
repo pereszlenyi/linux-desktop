@@ -6,6 +6,7 @@
 ECHO=/usr/bin/echo
 SUDO=/usr/bin/sudo
 DIRNAME=/usr/bin/dirname
+BASENAME=/usr/bin/basename
 APTGET=/usr/bin/apt-get
 ADD_APT_REPO=/usr/bin/add-apt-repository
 ANSIBLE=/usr/bin/ansible-playbook
@@ -15,11 +16,12 @@ function die {
 	exit 1
 }
 
-for FILE in "$ECHO" "$SUDO" "$DIRNAME" "$APTGET" "$ADD_APT_REPO" ; do
+for FILE in "$ECHO" "$SUDO" "$DIRNAME" "$BASENAME" "$APTGET" "$ADD_APT_REPO" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
-[ $# == 0 ] || die "\"$0\" doesn't accept any parameters."
+FILENAME=$($BASENAME "$0")
+[ $# == 0 ] || die "$FILENAME doesn't accept any parameters."
 
 function check_ansible {
 	[ -x "$ANSIBLE" ]
@@ -77,7 +79,7 @@ if ./scripts/yes_or_no.sh \
 	"Do you want to develop in Java?" ; then
 	INSTALL_JAVA_TOOLS=true
 	$ECHO "Azul Zulu build of OpenJDK version ${JDK_VERSION} will be installed."
-	$ECHO "If you want to change the version, set variable JDK_VERSION in install.sh."
+	$ECHO "If you want to change the version, set variable JDK_VERSION in $FILENAME."
 fi
 $ECHO ""
 
@@ -88,11 +90,12 @@ $ANSIBLE ./setup.ansible.yml --ask-become-pass \
 	JDK_VERSION=\"$JDK_VERSION\" \
 	INSTALL_CONTAINERIZATION_TECHS=\"$INSTALL_CONTAINERIZATION_TECHS\"" && \
 $ECHO "=== Install was SUCCESSFUL ===" || \
-die "Failed to run Ansible playbook. You can try shutting down and restarting WSL (by \"wsl.exe --shutdown\") then running $0 again."
+die "Failed to run Ansible playbook. You can try shutting down and restarting WSL (by \"wsl.exe --shutdown\") then running $FILENAME again."
 
 if [ -e /var/run/reboot-required ] ; then
 	$ECHO ""
 	$ECHO "You have to shut down and restart WSL for the changes to take effect."
+	$ECHO "After restarting, you can run this install script again by executing 'run_install_script'."
 	if ./scripts/yes_or_no.sh "Do you want to shut down WSL now?" ; then
 		wsl.exe --shutdown
 	else
