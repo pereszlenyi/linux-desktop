@@ -286,10 +286,8 @@
           remote_src: yes
 
       - name: Adding repositories
-        ansible.builtin.apt_repository:
-          repo: "{{ item['repository'] }}"
-          filename: "{{ item['filename'] }}"
-          update_cache: no
+        ansible.builtin.include_tasks:
+          file: ./apt_repository.ansible.yml
         loop: '{{ REPOSITORIES }}'
 
       - name: Installing additional packages

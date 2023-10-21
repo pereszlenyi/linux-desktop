@@ -1,0 +1,42 @@
+---
+  - name: Adding the repository line to the file
+    ansible.builtin.apt_repository:
+      repo: "{{ item['repository'] }}"
+      filename: "{{ item['filename'] }}"
+      mode: u=rw,g=r,o=r
+      update_cache: no
+
+  - name: Checking that the repository line is only present once
+    ansible.builtin.command:
+      cmd: >
+        /usr/bin/grep --fixed-strings "{{ item['repository'] }}"
+        /etc/apt/sources.list.d/{{ item['filename'] }}.list
+    changed_when: false
+    register: REPOSITORY_LINE
+    failed_when: >
+      (REPOSITORY_LINE is failed) or
+      (REPOSITORY_LINE['stdout_lines'] | length != 1) or
+      (REPOSITORY_LINE['stderr_lines'] != [])
+
+  # There may be older versions of the repository present in the file that need to be removed.
+  - name: Getting lines that don't belong to the file
+    ansible.builtin.shell:
+      cmd: >
+        /usr/bin/grep --invert-match --extended-regexp "^[[:space:]]*#.*$" /etc/apt/sources.list.d/{{ item['filename'] }}.list |
+        /usr/bin/grep --invert-match --fixed-strings "{{ item['repository'] }}" |
+        /usr/bin/sort --unique
+      executable: /bin/bash
+    changed_when: false
+    register: UNWANTED_LINES
+    failed_when: >
+      (UNWANTED_LINES['rc'] > 1) or
+      (UNWANTED_LINES['stderr_lines'] != [])
+
+  - name: Removing unwanted lines
+    ansible.builtin.lineinfile:
+      path: /etc/apt/sources.list.d/{{ item['filename'] }}.list
+      line: "{{ UNWANTED_LINE }}"
+      state: absent
+    loop: "{{ UNWANTED_LINES['stdout_lines'] }}"
+    loop_control:
+      loop_var: UNWANTED_LINE
