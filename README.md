@@ -100,10 +100,11 @@ If this was the first time running the script, it will likely ask you to restart
 === Install was SUCCESSFUL ===
 
 You have to shut down and restart WSL for the changes to take effect.
+After restarting, you can run this install script again by executing 'run_install_script'.
 Do you want to shut down WSL now? [yes/no]:
 ~~~
 
-Do so, then after restart, execute [`install.sh`](install.sh) again.
+Do so, then after restart, run the install script again by executing `run_install_script`.
 This will complete the installation.
 
 ## Features
@@ -112,10 +113,11 @@ Below is a list of what the above steps do for your system.
 
 ### Systemwide Changes
 
-* Your Ubuntu packages are updated to the latest version.
-  In fact, you can use [`install.sh`](install.sh) later to update Ubuntu.
+* Your Ubuntu APT and snap packages are updated to the latest version.
+  In fact, you can use `run_install_script` later to update Ubuntu.
 * A bunch of software are installed, such as [Firefox](https://www.mozilla.org/en-US/firefox/new/), [Google Chrome](https://www.google.com/chrome/), [Geany](https://www.geany.org/), [Meld](https://meldmerge.org/), etc.
-  * If you selected to install containerization technologies, then [Docker Engine](https://docs.docker.com/engine/install/ubuntu/), [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/), [Helm](https://helm.sh/), [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt) are also installed.
+  * If you select to install containerization technologies, then [Docker Engine](https://docs.docker.com/engine/install/ubuntu/), [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/), [Helm](https://helm.sh/), [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt) will also be installed.
+  * If you select that you want to develop in Java, then [IntelliJ IDEA Community Edition](https://www.jetbrains.com/idea/), [Azul JDK](https://www.azul.com/downloads/), and the latest version of [Maven](https://maven.apache.org/) will also be installed.
 * The hostname is set in `/etc/wsl.conf` to show the Ubuntu release number.
 
 ### Changes for the User
@@ -126,4 +128,4 @@ Below is a list of what the above steps do for your system.
 * [Git is configured.](templates/bash_profile.sh.j2)
 * Useful [aliases](templates/bash_profile.sh.j2) and [scripts](scripts) are provided.
 * Configurations are set for some of the installed applications, e.g., for Geany.
-* If you selected to install containerization technologies, then it is verified that the user can run Docker commands.
+* If you select to install containerization technologies, then it will be verified that the user can run Docker commands.
