@@ -391,6 +391,16 @@
         - github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
         - github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
         - github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+      GEANY_THEMES:
+        - commit: 80d4762675d16063fb776e55b49973f3cbdc69bb
+          filename: pygments.conf
+          checksum: e71c6d9a3a656bdec588ad84dbdc48e43c3a2d54773184880c3289ebb4fa84daf3665120b086e740e967f1260fb6923245d7f97ef039e96a6245aac2a1f3792e
+        - commit: 15c577d86dcd3a307a04a4213615e0d292a9c956
+          filename: epsilon.conf
+          checksum: 032e59037c4629b0d1a2a28f9f73b6e592022bab208da12509952dd25c2dda801d234cc8346ccedc34868216be9de99e76a3cedcd454cd48cd1d484bf166d350
+        - commit: 31e6ee9bc825e16d3b48c0b30e20c763480da0c4
+          filename: ubuntu.conf
+          checksum: 548ebab2e3615b78f04f91b5a50b208540a91df26304a5c22b802fb31ff1b9bf6c3cbcf18e81c7ce4a67337bd9702ea5b09f033a34b1f4ee2d9eba49e07fc942
 
     tasks:
 
@@ -513,6 +523,20 @@
           line: . ~/bash_profile.sh
           backup: yes
         tags: bash_profile.sh
+
+      - name: Creating directory for Geany themes
+        ansible.builtin.file:
+          path: ~/.config/geany/colorschemes
+          state: directory
+          mode: u=rwx,g=,o=
+
+      - name: Downloading Geany themes
+        ansible.builtin.get_url:
+          url: https://raw.githubusercontent.com/geany/geany-themes/{{ item['commit'] }}/colorschemes/{{ item['filename'] }}
+          dest: ~/.config/geany/colorschemes
+          mode: u=rw,g=,o=
+          checksum: sha512:{{ item['checksum'] }}
+        loop: '{{ GEANY_THEMES }}'
 
       - name: Creating directories for configuration files
         ansible.builtin.file:
