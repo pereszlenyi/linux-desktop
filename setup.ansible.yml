@@ -529,6 +529,7 @@
           path: ~/.config/geany/colorschemes
           state: directory
           mode: u=rwx,g=,o=
+        tags: Geany
 
       - name: Downloading Geany themes
         ansible.builtin.get_url:
@@ -537,6 +538,40 @@
           mode: u=rw,g=,o=
           checksum: sha512:{{ item['checksum'] }}
         loop: '{{ GEANY_THEMES }}'
+        tags: Geany
+
+      - name: Copying Geany theme pygments.conf to pygments_customized.conf
+        ansible.builtin.copy:
+          src: ~/.config/geany/colorschemes/pygments.conf
+          dest: ~/.config/geany/colorschemes/pygments_customized.conf
+          mode: u=rw,g=,o=
+          force: no
+          remote_src: yes
+        tags: Geany
+
+      - name: Customizing Geany theme
+        ansible.builtin.lineinfile:
+          path: ~/.config/geany/colorschemes/pygments_customized.conf
+          regexp: "{{ item['regexp'] }}"
+          line: "{{ item['line'] }}"
+        loop:
+          - regexp: "^name=Pygments"
+            line: name=Pygments Customized
+          - regexp: "^description="
+            line: description=Customized Pygments theme for Geany
+          - regexp: "^string="
+            line: string=#002989;;false;false
+          - regexp: "^default="
+            line: default=#161616;#fbfbfb;false;false
+          - regexp: "^current_line="
+            line: current_line=#2e3436;#ebebeb;true
+          - regexp: "^number="
+            line: number=#9400b2
+          - regexp: "^attribute="
+            line: attribute=#0022aa;;true
+          - regexp: "^attribute_unknown="
+            line: attribute_unknown=#0022aa
+        tags: Geany
 
       - name: Creating directories for configuration files
         ansible.builtin.file:
