@@ -711,6 +711,37 @@
         changed_when: false
         when: INSTALL_JAVA and not BASH_PROFILE_SH_OUTPUT['changed']
 
+      - name: Getting APT configuration
+        ansible.builtin.shell:
+          cmd: /usr/bin/apt-config dump | /usr/bin/sort --unique
+          executable: /bin/bash
+        register: APT_CONFIGURATION_DUMP
+        changed_when: false
+        tags: unattended-upgrades
+
+      - name: Getting intended configuration from files
+        ansible.builtin.command:
+          cmd: >
+            /usr/bin/cat
+            {{ ['/etc/apt/apt.conf.d/'] | product(UNATTENDED_UPGRADES_CONFIGURATION_FILES)
+            | map('join', '')
+            | join(' ') }}
+        register: UNATTENDED_UPGRADES_CONFIGURATION_FROM_FILES
+        changed_when: false
+        tags: unattended-upgrades
+
+      - name: Verifying unattended-upgrades configuration
+        ansible.builtin.fail:
+          msg: Setting '{{ item }}' was not found.
+        when: item not in APT_CONFIGURATION_DUMP['stdout_lines']
+        loop: >
+          {{ (['Unattended-Upgrade::Allowed-Origins::']
+              | product(UNATTENDED_UPGRADES_SOURCES | map(attribute='line') | map('trim'))
+              | map('join', ' ')) +
+             (UNATTENDED_UPGRADES_OPTION_LINES | map(attribute='line')) +
+             UNATTENDED_UPGRADES_CONFIGURATION_FROM_FILES['stdout_lines'] }}
+        tags: unattended-upgrades
+
       - name: Printing message about systemd
         ansible.builtin.debug:
           msg: It seems that Ubuntu was not started with systemd. This means that some tasks were skipped. Run 'run_install_script' after restarting WSL.
