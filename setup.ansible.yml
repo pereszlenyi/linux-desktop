@@ -143,6 +143,50 @@
                   repository: deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ KUBECTL_VERSION }}/deb/ /
         when: CONTAINERIZATION_TECHS
 
+      - name: Setting variables for unattended-upgrades
+        ansible.builtin.set_fact:
+          UNATTENDED_UPGRADES_CONFIGURATION_FILES:
+            - 10periodic
+            - 20auto-upgrades
+          UNATTENDED_UPGRADES_UBUNTU_SOURCES:
+            - search_string: >-
+                "${distro_id}:${distro_codename}";
+              line: "\t\"${distro_id}:${distro_codename}\";"
+            - search_string: >-
+                "${distro_id}:${distro_codename}-security";
+              line: "\t\"${distro_id}:${distro_codename}-security\";"
+            - search_string: >-
+                "${distro_id}ESMApps:${distro_codename}-apps-security";
+              line: "\t\"${distro_id}ESMApps:${distro_codename}-apps-security\";"
+            - search_string: >-
+                "${distro_id}ESM:${distro_codename}-infra-security";
+              line: "\t\"${distro_id}ESM:${distro_codename}-infra-security\";"
+            - search_string: >-
+                "${distro_id}:${distro_codename}-updates";
+              line: "\t\"${distro_id}:${distro_codename}-updates\";"
+          UNATTENDED_UPGRADES_OPTION_LINES:
+            - search_string: >-
+                Unattended-Upgrade::AutoFixInterruptedDpkg
+              line: "Unattended-Upgrade::AutoFixInterruptedDpkg \"true\";"
+            - search_string: >-
+                Unattended-Upgrade::MinimalSteps
+              line: "Unattended-Upgrade::MinimalSteps \"true\";"
+            - search_string: >-
+                Unattended-Upgrade::Remove-Unused-Kernel-Packages
+              line: "Unattended-Upgrade::Remove-Unused-Kernel-Packages \"true\";"
+            - search_string: >-
+                Unattended-Upgrade::Remove-New-Unused-Dependencies
+              line: "Unattended-Upgrade::Remove-New-Unused-Dependencies \"true\";"
+            - search_string: >-
+                Unattended-Upgrade::Remove-Unused-Dependencies
+              line: "Unattended-Upgrade::Remove-Unused-Dependencies \"true\";"
+            - search_string: >-
+                Unattended-Upgrade::OnlyOnACPower
+              line: "Unattended-Upgrade::OnlyOnACPower \"true\";"
+            - search_string: >-
+                Unattended-Upgrade::Verbose
+              line: "Unattended-Upgrade::Verbose \"true\";"
+
       - name: Setting playbook variables
         ansible.builtin.set_fact:
           PPAS: '{{ REQUIRED_PPAS }}'
@@ -167,6 +211,7 @@
             (JAVA_CLASSIC_SNAPS if INSTALL_JAVA else []) +
             (CONTAINERIZATION_CLASSIC_SNAPS if CONTAINERIZATION_TECHS else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
+          UNATTENDED_UPGRADES_SOURCES: '{{ UNATTENDED_UPGRADES_UBUNTU_SOURCES }}'
 
   - name: Systemwide changes
     hosts: localhost
@@ -200,6 +245,7 @@
             - bash-completion
             - aptitude
             - unattended-upgrades
+            - update-notifier-common
             - snapd
             - git
             - openssh-client
@@ -322,7 +368,7 @@
           name: "{{ ansible_facts['env']['SUDO_USER'] }}"
           groups: docker
           append: yes
-        notify: "reboot required"
+        notify: reboot required
         register: ADD_USER_TO_DOCKER_OUTPUT
         when: CONTAINERIZATION_TECHS
 
@@ -365,12 +411,49 @@
         tags: snap
         when: SYSTEMD_IS_RUNNING
 
+      - name: Creating configuration files for unattended-upgrades
+        ansible.builtin.template:
+          src: ./templates/unattended-upgrades.{{ item }}.j2
+          dest: /etc/apt/apt.conf.d/{{ item }}
+          mode: u=rw,g=r,o=r
+        notify: reboot required
+        loop: '{{ UNATTENDED_UPGRADES_CONFIGURATION_FILES }}'
+        tags: unattended-upgrades
+
+      - name: Saving a backup of 50unattended-upgrades
+        ansible.builtin.copy:
+          src: /etc/apt/apt.conf.d/50unattended-upgrades
+          dest: /etc/apt/apt.conf.d/backup_of_50unattended-upgrades
+          mode: u=r,g=r,o=r
+          force: no
+          remote_src: yes
+        tags: unattended-upgrades
+
+      - name: Setting sources in 50unattended-upgrades
+        ansible.builtin.lineinfile:
+          path: /etc/apt/apt.conf.d/50unattended-upgrades
+          search_string: "{{ item['search_string'] }}"
+          line: "{{ item['line'] }}"
+          insertafter: "Unattended-Upgrade::Allowed-Origins {"
+        notify: reboot required
+        loop: '{{ UNATTENDED_UPGRADES_SOURCES }}'
+        tags: unattended-upgrades
+
+      - name: Setting options in 50unattended-upgrades
+        ansible.builtin.lineinfile:
+          path: /etc/apt/apt.conf.d/50unattended-upgrades
+          search_string: "{{ item['search_string'] }}"
+          line: "{{ item['line'] }}"
+        notify: reboot required
+        loop: '{{ UNATTENDED_UPGRADES_OPTION_LINES }}'
+        tags: unattended-upgrades
+
       - name: Creating /etc/wsl.conf from template wsl.conf.j2
         ansible.builtin.template:
           src: ./templates/wsl.conf.j2
           dest: /etc/wsl.conf
           mode: u=rw,g=r,o=r
-        notify: "reboot required"
+        notify: reboot required
         tags: wsl.conf
 
     handlers:
@@ -379,7 +462,7 @@
           path: /var/run/reboot-required
           state: touch
           mode: u=rw,g=r,o=r
-        listen: "reboot required"
+        listen: reboot required
 
   - name: Setting up the environment for the current user
     hosts: localhost
