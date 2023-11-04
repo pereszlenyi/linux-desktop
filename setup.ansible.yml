@@ -3,15 +3,14 @@
     hosts: localhost
     connection: local
     vars:
+      MINIMUM_UBUNTU_VERSION: "20.04"
       ARCHITECTURE_ALIAS:
         x86_64: amd64
       REQUIRED_PPAS:
         # Git
-        - ppa: ppa:git-core/ppa
-          filename: git-core-ubuntu-ppa
+        - git-core/ppa
         # Ansible
-        - ppa: ppa:ansible/ansible
-          filename: ansible-ubuntu-ansible
+        - ansible/ansible
       REQUIRED_APT_KEYRINGS:
         - google-chrome
       JAVA_APT_KEYRINGS:
@@ -28,9 +27,9 @@
           repository: deb [signed-by=/etc/apt/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main
       CONTAINERIZATION_REPOSITORIES:
         - filename: docker
-          repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
+          repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ UBUNTU_CODENAME }} stable
         - filename: azure-cli
-          repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts['distribution_release'] }} main
+          repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ UBUNTU_CODENAME }} main
       REQUIRED_PACKAGES:
         - google-chrome-stable
       JAVA_PACKAGES:
@@ -99,8 +98,24 @@
 
       - name: Exiting if we are not running Ubuntu
         ansible.builtin.fail:
-          msg: "The OS is {{ ansible_facts['distribution'] }}. This playbook is only meant to work with Ubuntu."
+          msg: >-
+            The OS is {{ ansible_facts['distribution'] }}.
+            This playbook is only meant to work with Ubuntu.
         when: ansible_facts['distribution'] != "Ubuntu"
+
+      - name: Exiting if we are running an old version of Ubuntu
+        ansible.builtin.fail:
+          msg: >-
+            The Ubuntu version is {{ ansible_facts['distribution_version'] }}.
+            This playbook requires Ubuntu version {{ MINIMUM_UBUNTU_VERSION }} or newer.
+        when: >-
+          ([0,1] | map('extract', ansible_facts['distribution_version'].split('.')) | join('') | int)
+          < (MINIMUM_UBUNTU_VERSION.split('.') | join('') | int)
+
+      - name: Exiting if we are not able to determine the architecture
+        ansible.builtin.fail:
+          msg: Can't find an alias for architecture '{{ ansible_facts['architecture'] }}'.
+        when: ansible_facts['architecture'] not in ARCHITECTURE_ALIAS
 
       - name: Populating service facts
         ansible.builtin.service_facts:
@@ -108,16 +123,12 @@
       - name: Setting system variables
         ansible.builtin.set_fact:
           ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
+          UBUNTU_CODENAME: "{{ ansible_facts['distribution_release'] }}"
           HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
           CURRENT_DIRECTORY: "{{ ansible_facts['env']['PWD'] }}"
           SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
-          CONTAINERIZATION_TECHS: "{{ INSTALL_CONTAINERIZATION_TECHS is defined and INSTALL_CONTAINERIZATION_TECHS == 'true' }}"
-          INSTALL_JAVA: "{{ INSTALL_JAVA_TOOLS is defined and INSTALL_JAVA_TOOLS == 'true' }}"
-
-      - name: Exiting if we were not able to determine the architecture
-        ansible.builtin.fail:
-          msg: "Can't find an alias for architecture '{{ ansible_facts['architecture'] }}'."
-        when: ansible_facts['architecture'] not in ARCHITECTURE_ALIAS
+          CONTAINERIZATION_TECHS: "{{ (INSTALL_CONTAINERIZATION_TECHS | default('false')) == 'true' }}"
+          INSTALL_JAVA: "{{ (INSTALL_JAVA_TOOLS | default('false')) == 'true' }}"
 
       - name: Determining the kubectl repository
         block:
@@ -126,7 +137,7 @@
               url: https://dl.k8s.io/release/stable.txt
               return_content: yes
             register: KUBECTL_VERSION_QUERY
-            failed_when: >
+            failed_when: >-
               (KUBECTL_VERSION_QUERY is failed) or
               (KUBECTL_VERSION_QUERY['status'] != 200) or
               (KUBECTL_VERSION_QUERY['content_type'] != "text/plain") or
@@ -149,21 +160,11 @@
             - 10periodic
             - 20auto-upgrades
           UNATTENDED_UPGRADES_UBUNTU_SOURCES:
-            - search_string: >-
-                "${distro_id}:${distro_codename}";
-              line: "\t\"${distro_id}:${distro_codename}\";"
-            - search_string: >-
-                "${distro_id}:${distro_codename}-security";
-              line: "\t\"${distro_id}:${distro_codename}-security\";"
-            - search_string: >-
-                "${distro_id}ESMApps:${distro_codename}-apps-security";
-              line: "\t\"${distro_id}ESMApps:${distro_codename}-apps-security\";"
-            - search_string: >-
-                "${distro_id}ESM:${distro_codename}-infra-security";
-              line: "\t\"${distro_id}ESM:${distro_codename}-infra-security\";"
-            - search_string: >-
-                "${distro_id}:${distro_codename}-updates";
-              line: "\t\"${distro_id}:${distro_codename}-updates\";"
+            - "\"${distro_id}:${distro_codename}\";"
+            - "\"${distro_id}:${distro_codename}-security\";"
+            - "\"${distro_id}ESMApps:${distro_codename}-apps-security\";"
+            - "\"${distro_id}ESM:${distro_codename}-infra-security\";"
+            - "\"${distro_id}:${distro_codename}-updates\";"
           UNATTENDED_UPGRADES_OPTION_LINES:
             - search_string: >-
                 Unattended-Upgrade::AutoFixInterruptedDpkg
@@ -190,23 +191,23 @@
       - name: Setting playbook variables
         ansible.builtin.set_fact:
           PPAS: '{{ REQUIRED_PPAS }}'
-          APT_KEYRINGS: >
+          APT_KEYRINGS: >-
             {{ REQUIRED_APT_KEYRINGS +
             (JAVA_APT_KEYRINGS if INSTALL_JAVA else []) +
             (CONTAINERIZATION_APT_KEYRINGS if CONTAINERIZATION_TECHS else []) }}
-          REPOSITORIES: >
+          REPOSITORIES: >-
             {{ REQUIRED_REPOSITORIES +
             (JAVA_REPOSITORIES if INSTALL_JAVA else []) +
             ((CONTAINERIZATION_REPOSITORIES + KUBECTL_REPOSITORY) if CONTAINERIZATION_TECHS else []) }}
-          ADDITIONAL_PACKAGES: >
+          ADDITIONAL_PACKAGES: >-
             {{ REQUIRED_PACKAGES +
             (JAVA_PACKAGES if INSTALL_JAVA else []) +
             (CONTAINERIZATION_PACKAGES if CONTAINERIZATION_TECHS else []) }}
-          SYSTEMD_SERVICES: >
+          SYSTEMD_SERVICES: >-
             {{ REQUIRED_SYSTEMD_SERVICES +
             (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}
           SNAPS: '{{ REQUIRED_SNAPS }}'
-          CLASSIC_SNAPS: >
+          CLASSIC_SNAPS: >-
             {{ [] +
             (JAVA_CLASSIC_SNAPS if INSTALL_JAVA else []) +
             (CONTAINERIZATION_CLASSIC_SNAPS if CONTAINERIZATION_TECHS else []) }}
@@ -222,8 +223,8 @@
 
       - name: Adding PPAs
         ansible.builtin.command:
-          cmd: /usr/bin/add-apt-repository --yes "{{ item['ppa'] }}"
-          creates: /etc/apt/sources.list.d/{{ item['filename'] }}-{{ ansible_facts['distribution_release'] }}.list
+          cmd: /usr/bin/add-apt-repository --yes "ppa:{{ item }}"
+          creates: /etc/apt/sources.list.d/{{ item | replace('/', '-ubuntu-') }}-{{ UBUNTU_CODENAME }}.list
         loop: '{{ PPAS }}'
 
       - name: Updating system
@@ -432,8 +433,8 @@
       - name: Setting sources in 50unattended-upgrades
         ansible.builtin.lineinfile:
           path: /etc/apt/apt.conf.d/50unattended-upgrades
-          search_string: "{{ item['search_string'] }}"
-          line: "{{ item['line'] }}"
+          search_string: "{{ item | trim }}"
+          line: "\t{{ item | trim }}"
           insertafter: "Unattended-Upgrade::Allowed-Origins {"
         notify: reboot required
         loop: '{{ UNATTENDED_UPGRADES_SOURCES }}'
@@ -489,7 +490,7 @@
 
       - name: Exiting if FULLNAME or EMAIL are not defined
         ansible.builtin.fail:
-          msg: "Required variables FULLNAME or EMAIL are not defined."
+          msg: Required variables FULLNAME or EMAIL are not defined.
         when: (FULLNAME is undefined) or (EMAIL is undefined)
 
       - name: Creating directory ~/.ssh/ if it does not exist
@@ -555,7 +556,7 @@
               executable: /bin/bash
             changed_when: false
             register: MAVEN_VERSION_COMMAND
-            failed_when: >
+            failed_when: >-
               (MAVEN_VERSION_COMMAND is failed) or
               (MAVEN_VERSION_COMMAND['stdout_lines'] == []) or
               (MAVEN_VERSION_COMMAND['stderr_lines'] != [])
@@ -569,7 +570,7 @@
               url: https://downloads.apache.org/maven/maven-{{ MAVEN_VERSION.split('.')[0] }}/{{ MAVEN_VERSION }}/binaries/apache-maven-{{ MAVEN_VERSION }}-bin.tar.gz.sha512
               return_content: yes
             register: MAVEN_CHECKSUM_COMMAND
-            failed_when: >
+            failed_when: >-
               (MAVEN_CHECKSUM_COMMAND is failed) or
               (MAVEN_CHECKSUM_COMMAND['status'] != 200) or
               (MAVEN_CHECKSUM_COMMAND['content_length'] != "128")
@@ -696,11 +697,16 @@
             ansible.builtin.command:
               cmd: /usr/bin/docker run hello-world
             register: DOCKER_RUN_OUTPUT
-            failed_when: >
+            failed_when: >-
               (DOCKER_RUN_OUTPUT is failed) or
-              ("This message shows that your installation appears to be working correctly." not in DOCKER_RUN_OUTPUT['stdout_lines'])
+              ("This message shows that your installation appears to be working correctly."
+                not in DOCKER_RUN_OUTPUT['stdout_lines'])
             when: DOCKER_IMAGE_OUTPUT['images'] | length == 0
-        when: CONTAINERIZATION_TECHS and SYSTEMD_IS_RUNNING and not ADD_USER_TO_DOCKER_OUTPUT['changed']
+        when:
+          - CONTAINERIZATION_TECHS
+          - SYSTEMD_IS_RUNNING
+          - ADD_USER_TO_DOCKER_OUTPUT is defined
+          - not ADD_USER_TO_DOCKER_OUTPUT['changed']
 
       - name: Verifying the default Java version
         ansible.builtin.shell:
@@ -709,7 +715,9 @@
             java --version | /usr/bin/grep --fixed-strings "OpenJDK Runtime Environment Zulu{{ JDK_VERSION }}"
           executable: /bin/bash
         changed_when: false
-        when: INSTALL_JAVA and not BASH_PROFILE_SH_OUTPUT['changed']
+        when:
+          - INSTALL_JAVA
+          - not BASH_PROFILE_SH_OUTPUT['changed']
 
       - name: Getting APT configuration
         ansible.builtin.shell:
@@ -734,9 +742,9 @@
         ansible.builtin.fail:
           msg: Setting '{{ item }}' was not found.
         when: item not in APT_CONFIGURATION_DUMP['stdout_lines']
-        loop: >
+        loop: >-
           {{ (['Unattended-Upgrade::Allowed-Origins::']
-              | product(UNATTENDED_UPGRADES_SOURCES | map(attribute='line') | map('trim'))
+              | product(UNATTENDED_UPGRADES_SOURCES | map('trim'))
               | map('join', ' ')) +
              (UNATTENDED_UPGRADES_OPTION_LINES | map(attribute='line')) +
              UNATTENDED_UPGRADES_CONFIGURATION_FROM_FILES['stdout_lines'] }}
@@ -744,10 +752,17 @@
 
       - name: Printing message about systemd
         ansible.builtin.debug:
-          msg: It seems that Ubuntu was not started with systemd. This means that some tasks were skipped. Run 'run_install_script' after restarting WSL.
+          msg: >-
+            It seems that Ubuntu was not started with systemd.
+            This means that some tasks were skipped.
+            Run 'run_install_script' after restarting WSL.
         when: not SYSTEMD_IS_RUNNING
 
       - name: Printing message about Docker
         ansible.builtin.debug:
-          msg: Docker was installed. In order to verify that the user can run docker commands, run 'run_install_script' after restarting WSL.
-        when: ADD_USER_TO_DOCKER_OUTPUT['changed']
+          msg: >-
+            Docker was installed. In order to verify that the user can run docker commands,
+            run 'run_install_script' after restarting WSL.
+        when:
+          - ADD_USER_TO_DOCKER_OUTPUT is defined
+          - ADD_USER_TO_DOCKER_OUTPUT['changed']
