@@ -247,6 +247,7 @@
             - aptitude
             - unattended-upgrades
             - update-notifier-common
+            - distro-info
             - snapd
             - git
             - openssh-client
@@ -750,6 +751,13 @@
              UNATTENDED_UPGRADES_CONFIGURATION_FROM_FILES['stdout_lines'] }}
         tags: unattended-upgrades
 
+      - name: Getting the list of all supported stable versions of Ubuntu
+        ansible.builtin.command:
+          cmd: /usr/bin/distro-info --supported
+        register: SUPPORTED_UBUNTU_VERSIONS
+        changed_when: false
+        tags: distro-info
+
       - name: Printing message about systemd
         ansible.builtin.debug:
           msg: >-
@@ -766,3 +774,12 @@
         when:
           - ADD_USER_TO_DOCKER_OUTPUT is defined
           - ADD_USER_TO_DOCKER_OUTPUT['changed']
+
+      - name: Printing message if the current Ubuntu version is unsupported
+        ansible.builtin.debug:
+          msg: >-
+            WARNING: You are currently using {{ ansible_facts['lsb']['description'] }}
+            which is no longer supported.
+            You should switch to a newer version of Ubuntu.
+        when: UBUNTU_CODENAME not in SUPPORTED_UBUNTU_VERSIONS['stdout_lines']
+        tags: distro-info
