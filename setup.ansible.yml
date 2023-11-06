@@ -494,6 +494,15 @@
           msg: Required variables FULLNAME or EMAIL are not defined.
         when: (FULLNAME is undefined) or (EMAIL is undefined)
 
+      - name: Getting the status of /var/run/reboot-required
+        ansible.builtin.stat:
+          path: /var/run/reboot-required
+        register: STATUS_OF_REBOOT_REQUIRED
+
+      - name: Setting variable REBOOT_REQUIRED
+        ansible.builtin.set_fact:
+          REBOOT_REQUIRED: "{{ STATUS_OF_REBOOT_REQUIRED['stat']['exists'] }}"
+
       - name: Creating directory ~/.ssh/ if it does not exist
         ansible.builtin.file:
           path: ~/.ssh/
@@ -708,6 +717,7 @@
           - SYSTEMD_IS_RUNNING
           - ADD_USER_TO_DOCKER_OUTPUT is defined
           - not ADD_USER_TO_DOCKER_OUTPUT['changed']
+          - not REBOOT_REQUIRED
 
       - name: Verifying the default Java version
         ansible.builtin.shell:
@@ -719,6 +729,7 @@
         when:
           - INSTALL_JAVA
           - not BASH_PROFILE_SH_OUTPUT['changed']
+          - not REBOOT_REQUIRED
 
       - name: Getting APT configuration
         ansible.builtin.shell:
