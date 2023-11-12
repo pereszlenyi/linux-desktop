@@ -51,6 +51,7 @@ export JAVA_HOME="/usr/lib/jvm/zulu{{ JDK_VERSION }}-ca-{{ ARCHITECTURE }}"
 export PATH="${JAVA_HOME}/bin:{{ CURRENT_DIRECTORY }}/bin/apache-maven-{{ MAVEN_VERSION }}/bin:${PATH}"
 {% endif %}
 {% if CONTAINERIZATION_TECHS %}
+export PATH="{{ HELM_INSTALL_DIRECTORY }}/linux-{{ ARCHITECTURE }}:${PATH}"
 
 # Enabling kubectl autocompletion
 source <(/usr/bin/kubectl completion bash)
