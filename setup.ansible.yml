@@ -738,13 +738,22 @@
           - not ADD_USER_TO_DOCKER_OUTPUT['changed']
           - not REBOOT_REQUIRED
 
-      - name: Verifying the default Java version
-        ansible.builtin.shell:
-          cmd: >
-            java --version | /usr/bin/grep --fixed-strings "openjdk {{ JDK_VERSION }}." &&
-            java --version | /usr/bin/grep --fixed-strings "OpenJDK Runtime Environment Zulu{{ JDK_VERSION }}"
-          executable: /bin/bash
-        changed_when: false
+      - name: Verifying the default Java and Maven versions
+        block:
+          - name: Verifying the default Java version
+            ansible.builtin.shell:
+              cmd: >
+                java --version | /usr/bin/grep --fixed-strings "openjdk {{ JDK_VERSION }}." &&
+                java --version | /usr/bin/grep --fixed-strings "OpenJDK Runtime Environment Zulu{{ JDK_VERSION }}"
+              executable: /bin/bash
+            changed_when: false
+
+          - name: Verifying the default Maven version
+            ansible.builtin.shell:
+              cmd: >
+                mvn --version | /usr/bin/grep --fixed-strings "Apache Maven {{ MAVEN_VERSION }}"
+              executable: /bin/bash
+            changed_when: false
         when:
           - INSTALL_JAVA
           - not BASH_PROFILE_SH_OUTPUT['changed']
