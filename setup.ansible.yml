@@ -56,6 +56,10 @@
         - docker.io
         - containerd
         - runc
+      NEVER_WANTED_SNAPS:
+        - code
+      UNWANTED_CONTAINERIZATION_SNAPS:
+        - helm
       REQUIRED_SYSTEMD_SERVICES:
         - unattended-upgrades
         - snapd
@@ -66,8 +70,7 @@
         - firefox
       JAVA_CLASSIC_SNAPS:
         - intellij-idea-community
-      CONTAINERIZATION_CLASSIC_SNAPS:
-        - helm
+      CONTAINERIZATION_CLASSIC_SNAPS: []
       REQUIRED_PYTHON_PACKAGES:
         - pip
         - ansible-lint
@@ -220,6 +223,9 @@
             {{ UNWANTED_PACKAGES +
             (UNWANTED_DOCKER_PACKAGES if CONTAINERIZATION_TECHS else []) }}
           UNWANTED_DOCKER_APT_PACKAGES: '{{ UNWANTED_DOCKER_PACKAGES }}'
+          UNWANTED_SNAPS: >-
+            {{ NEVER_WANTED_SNAPS +
+            (UNWANTED_CONTAINERIZATION_SNAPS if CONTAINERIZATION_TECHS else []) }}
           SYSTEMD_SERVICES: >-
             {{ REQUIRED_SYSTEMD_SERVICES +
             (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}
@@ -425,6 +431,14 @@
           name: '{{ item }}'
           classic: true
         loop: '{{ CLASSIC_SNAPS }}'
+        tags: snap
+        when: SYSTEMD_IS_RUNNING
+
+      - name: Removing unwanted snaps
+        community.general.snap:
+          name: '{{ item }}'
+          state: absent
+        loop: '{{ UNWANTED_SNAPS }}'
         tags: snap
         when: SYSTEMD_IS_RUNNING
 
