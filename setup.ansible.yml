@@ -48,6 +48,14 @@
         - kubectl
         # Azure CLI
         - azure-cli
+      UNWANTED_PACKAGES:
+        - firefox
+      UNWANTED_DOCKER_PACKAGES:
+        - docker
+        - docker-engine
+        - docker.io
+        - containerd
+        - runc
       REQUIRED_SYSTEMD_SERVICES:
         - unattended-upgrades
         - snapd
@@ -208,6 +216,10 @@
             {{ REQUIRED_PACKAGES +
             (JAVA_PACKAGES if INSTALL_JAVA else []) +
             (CONTAINERIZATION_PACKAGES if CONTAINERIZATION_TECHS else []) }}
+          UNWANTED_APT_PACKAGES: >-
+            {{ UNWANTED_PACKAGES +
+            (UNWANTED_DOCKER_PACKAGES if CONTAINERIZATION_TECHS else []) }}
+          UNWANTED_DOCKER_APT_PACKAGES: '{{ UNWANTED_DOCKER_PACKAGES }}'
           SYSTEMD_SERVICES: >-
             {{ REQUIRED_SYSTEMD_SERVICES +
             (CONTAINERIZATION_SERVICES if CONTAINERIZATION_TECHS else []) }}
@@ -312,23 +324,6 @@
           state: directory
           mode: u=rwx,g=rx,o=rx
 
-      - name: Removing Mozilla Firefox deb package
-        ansible.builtin.apt:
-          name: firefox
-          state: absent
-        when: SYSTEMD_IS_RUNNING
-
-      - name: Removing old versions of Docker
-        ansible.builtin.apt:
-          name:
-            - docker
-            - docker-engine
-            - docker.io
-            - containerd
-            - runc
-          state: absent
-        when: CONTAINERIZATION_TECHS
-
       - name: Adding GPG keys from apt_keyrings
         ansible.builtin.shell:
           cmd: /usr/bin/gpg --dearmor --output /etc/apt/keyrings/{{ item }}.gpg <./apt_keyrings/{{ item }}.txt
@@ -356,12 +351,24 @@
           file: ./apt_repository.ansible.yml
         loop: '{{ REPOSITORIES }}'
 
+      - name: Removing old versions of Docker
+        ansible.builtin.apt:
+          name: '{{ UNWANTED_DOCKER_APT_PACKAGES }}'
+          state: absent
+        when: CONTAINERIZATION_TECHS
+
       - name: Installing additional packages
         ansible.builtin.apt:
           update_cache: yes
           install_recommends: yes
           name: '{{ ADDITIONAL_PACKAGES }}'
           state: latest
+
+      - name: Removing unwanted APT packages
+        ansible.builtin.apt:
+          name: '{{ UNWANTED_APT_PACKAGES }}'
+          state: absent
+        when: SYSTEMD_IS_RUNNING
 
       - name: Cleaning the local apt cache
         ansible.builtin.apt:
