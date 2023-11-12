@@ -60,6 +60,11 @@
         - intellij-idea-community
       CONTAINERIZATION_CLASSIC_SNAPS:
         - helm
+      REQUIRED_PYTHON_PACKAGES:
+        - pip
+        - ansible-lint
+      CONTAINERIZATION_PYTHON_PACKAGES:
+        - docker
       REQUIRED_CONFIGURATION_FILES:
         # Geany
         - template: geany.conf
@@ -211,6 +216,9 @@
             {{ [] +
             (JAVA_CLASSIC_SNAPS if INSTALL_JAVA else []) +
             (CONTAINERIZATION_CLASSIC_SNAPS if CONTAINERIZATION_TECHS else []) }}
+          PYTHON_PACKAGES: >-
+            {{ REQUIRED_PYTHON_PACKAGES +
+            (CONTAINERIZATION_PYTHON_PACKAGES if CONTAINERIZATION_TECHS else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
           UNATTENDED_UPGRADES_SOURCES: '{{ UNATTENDED_UPGRADES_UBUNTU_SOURCES }}'
 
@@ -689,12 +697,23 @@
         ignore_errors: yes
         when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
 
-      - name: Installing docker python package
+      - name: Getting the status of ~/.local/bin/pip3
+        ansible.builtin.stat:
+          path: ~/.local/bin/pip3
+        register: STATUS_OF_PIP3
+
+      - name: Installing pip locally
         ansible.builtin.pip:
-          name: docker
-          extra_args: --upgrade
+          name: pip
+          state: latest
           executable: /usr/bin/pip3
-        when: CONTAINERIZATION_TECHS
+        when: not STATUS_OF_PIP3['stat']['exists']
+
+      - name: Installing python packages locally
+        ansible.builtin.pip:
+          name: '{{ PYTHON_PACKAGES }}'
+          state: latest
+          executable: ~/.local/bin/pip3
 
       - name: Verifying that the user can run docker commands
         block:
