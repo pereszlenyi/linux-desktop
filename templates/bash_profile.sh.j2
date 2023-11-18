@@ -56,9 +56,30 @@ export JAVA_HOME="/usr/lib/jvm/zulu{{ JDK_VERSION }}-ca-{{ ARCHITECTURE }}"
 export PATH="${JAVA_HOME}/bin:{{ CURRENT_DIRECTORY }}/bin/apache-maven-{{ MAVEN_VERSION }}/bin:${PATH}"
 {% endif %}
 {% if CONTAINERIZATION_TECHS %}
+
 # Adding Helm to the path
 export PATH="{{ HELM_INSTALL_DIRECTORY }}/linux-{{ ARCHITECTURE }}:${PATH}"
 
 # Enabling kubectl autocompletion
 source <(/usr/bin/kubectl completion bash)
 {% endif %}
+
+# This section changes the Bash prompt
+
+# Replaces all matches of a regular expression in a string and
+# prints the result to the standard output.
+function replace_regex {
+	/usr/bin/sed "s/$1/$2/g" <<<"$3"
+}
+
+PROMPT_SEPARATOR_COLOR="00;33m"
+
+# Setting a color for the '$' at the end
+NEW_PROMPT=$(replace_regex "00m\\\\\\]\\\\\$ \$" "$PROMPT_SEPARATOR_COLOR\\\\] \\\\\$\\\\[\\\\033[00m\\\\] " "$PS1")
+# Setting a color for the colon.
+NEW_PROMPT=$(replace_regex "\\[00m\\\\]:" "[$PROMPT_SEPARATOR_COLOR\\\\]:" "$NEW_PROMPT")
+# Setting a color for the '@'.
+NEW_PROMPT=$(replace_regex "@\\\\h\\\\" \
+	"\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\]@\\\\[\\\\033[01;32m\\\\]\\\\h\\\\" "$NEW_PROMPT")
+
+PS1="$NEW_PROMPT"

@@ -270,6 +270,7 @@
             - ca-certificates
             - coreutils
             - bash-completion
+            - sed
             - aptitude
             - unattended-upgrades
             - update-notifier-common
