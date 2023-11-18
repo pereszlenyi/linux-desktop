@@ -12,8 +12,10 @@ alias fd='/usr/bin/fdfind --hidden'
 alias ncdu='/usr/bin/ncdu -rr --color dark -x'
 alias diff='/usr/bin/colordiff'
 alias joe='/usr/bin/joe -beep -keepup -autoindent -highlight -linums -smartbacks -smarthome -wordwrap'
+alias glances='/usr/bin/glances --time 1'
 alias neofetch='/usr/bin/neofetch --memory_percent on --color_blocks off'
 alias screenfetch="/usr/bin/screenfetch -d '-disk'"
+alias srm='/usr/bin/srm -rvz'
 
 # Pulls the updates from the Git repository then runs the install script.
 alias run_install_script='/bin/bash -c \
@@ -50,9 +52,11 @@ alias git_status='/usr/bin/git fetch --quiet && /usr/bin/git status'
 {% if INSTALL_JAVA %}
 
 export JAVA_HOME="/usr/lib/jvm/zulu{{ JDK_VERSION }}-ca-{{ ARCHITECTURE }}"
+# Adding Java and Maven to the path
 export PATH="${JAVA_HOME}/bin:{{ CURRENT_DIRECTORY }}/bin/apache-maven-{{ MAVEN_VERSION }}/bin:${PATH}"
 {% endif %}
 {% if CONTAINERIZATION_TECHS %}
+# Adding Helm to the path
 export PATH="{{ HELM_INSTALL_DIRECTORY }}/linux-{{ ARCHITECTURE }}:${PATH}"
 
 # Enabling kubectl autocompletion

@@ -276,6 +276,7 @@
             - distro-info
             - snapd
             - git
+            - gitsome
             - openssh-client
             - joe
             - bat
@@ -287,11 +288,13 @@
             - python3-pip
             - finger
             - htop
+            - glances
             - colordiff
             - build-essential
             - cmake
             - p7zip-full
             - makepasswd
+            - secure-delete
             - neofetch
             - screenfetch
             - curl
@@ -315,6 +318,7 @@
             # GUI applications
             - xdg-utils
             - gitk
+            - git-gui
             - geany
             - geany-plugins
             - adwaita-icon-theme-full
