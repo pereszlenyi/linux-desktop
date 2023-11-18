@@ -170,6 +170,19 @@
                   repository: deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ KUBECTL_VERSION }}/deb/ /
         when: CONTAINERIZATION_TECHS
 
+      - name: Checking the Allowed-Origins line in 50unattended-upgrades
+        ansible.builtin.command:
+          cmd: >
+            /usr/bin/grep --extended-regexp
+            "^[[:space:]]*Unattended-Upgrade::Allowed-Origins[[:space:]]*{.*$"
+            /etc/apt/apt.conf.d/50unattended-upgrades
+        changed_when: false
+        register: ALLOWED_ORIGINS_LINE
+        failed_when: >-
+          (ALLOWED_ORIGINS_LINE is failed) or
+          (ALLOWED_ORIGINS_LINE['stdout_lines'] | length != 1) or
+          (ALLOWED_ORIGINS_LINE['stderr_lines'] != [])
+
       - name: Setting variables for unattended-upgrades
         ansible.builtin.set_fact:
           UNATTENDED_UPGRADES_CONFIGURATION_FILES:
@@ -269,6 +282,7 @@
             - gnupg
             - ca-certificates
             - coreutils
+            - grep
             - bash-completion
             - sed
             - aptitude
@@ -470,7 +484,7 @@
           path: /etc/apt/apt.conf.d/50unattended-upgrades
           search_string: "{{ item | trim }}"
           line: "\t{{ item | trim }}"
-          insertafter: "Unattended-Upgrade::Allowed-Origins {"
+          insertafter: "{{ ALLOWED_ORIGINS_LINE['stdout'] }}"
         notify: reboot required
         loop: '{{ UNATTENDED_UPGRADES_SOURCES }}'
         tags: unattended-upgrades

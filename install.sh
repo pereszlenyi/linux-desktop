@@ -46,7 +46,7 @@ INSTALL_COMMAND="$ECHO \"=== Installing Ansible ===\" && \
 	$APTGET --assume-yes --fix-broken install && \
 	$APTGET --assume-yes dist-upgrade && \
 	$ADD_APT_REPO --yes --update ppa:ansible/ansible && \
-	$APTGET --assume-yes install ansible aptitude && \
+	$APTGET --assume-yes install ansible aptitude grep && \
 	$APTGET --assume-yes autoremove && \
 	$APTGET --assume-yes clean && \
 	$ECHO \"=== Ansible is installed ===\" && \
