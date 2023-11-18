@@ -400,7 +400,7 @@
           name: '{{ item }}'
           state: started
           enabled: yes
-        with_items: '{{ SYSTEMD_SERVICES }}'
+        loop: '{{ SYSTEMD_SERVICES }}'
         when: SYSTEMD_IS_RUNNING
 
       - name: Updating existing snaps
@@ -561,7 +561,7 @@
           line: '{{ item }}'
           mode: u=rw,g=,o=
           create: yes
-        with_items: '{{ SSH_KEY_FINGERPRINTS }}'
+        loop: '{{ SSH_KEY_FINGERPRINTS }}'
         tags: ssh
 
       - name: Setting up GPG
@@ -625,7 +625,7 @@
               mode: u=rw,g=,o=
               checksum: sha512:{{ MAVEN_CHECKSUM_COMMAND['content'] }}
 
-          - name: Unarchive Maven
+          - name: Unarchiving Maven
             ansible.builtin.unarchive:
               src: "{{ CURRENT_DIRECTORY }}/bin/download/{{ MAVEN_FILENAME }}"
               dest: "{{ CURRENT_DIRECTORY }}/bin"
@@ -819,6 +819,11 @@
                 java --version | /usr/bin/grep --fixed-strings "OpenJDK Runtime Environment Zulu{{ JDK_VERSION }}"
               executable: /bin/bash
             changed_when: false
+            register: JAVA_VERSION_COMMAND
+            failed_when: >-
+              (JAVA_VERSION_COMMAND is failed) or
+              (JAVA_VERSION_COMMAND['stdout_lines'] | length != 2) or
+              (JAVA_VERSION_COMMAND['stderr_lines'] != [])
 
           - name: Verifying the default Maven version
             ansible.builtin.shell:
@@ -826,6 +831,11 @@
                 mvn --version | /usr/bin/grep --fixed-strings "Apache Maven {{ MAVEN_VERSION }}"
               executable: /bin/bash
             changed_when: false
+            register: MAVEN_VERSION_CHECK
+            failed_when: >-
+              (MAVEN_VERSION_CHECK is failed) or
+              (MAVEN_VERSION_CHECK['stdout_lines'] | length != 1) or
+              (MAVEN_VERSION_CHECK['stderr_lines'] != [])
         when:
           - INSTALL_JAVA
           - not BASH_PROFILE_SH_OUTPUT['changed']

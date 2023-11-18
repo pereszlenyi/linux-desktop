@@ -1,12 +1,14 @@
 #!/bin/bash
 
+# This file was generated from template {{ CURRENT_DIRECTORY }}/templates/bash_profile.sh.j2
+
 export FULLNAME="{{ FULLNAME }}"
 export EMAIL="{{ EMAIL }}"
 
 alias l='/usr/bin/ls -lah'
 alias less='/usr/bin/less --quit-if-one-screen --LINE-NUMBERS'
 alias bat='/usr/bin/batcat'
-alias fd='/usr/bin/fdfind'
+alias fd='/usr/bin/fdfind --hidden'
 alias ncdu='/usr/bin/ncdu -rr --color dark -x'
 alias diff='/usr/bin/colordiff'
 alias joe='/usr/bin/joe -beep -keepup -autoindent -highlight -linums -smartbacks -smarthome -wordwrap'
