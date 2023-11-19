@@ -251,7 +251,6 @@
             {{ REQUIRED_PYTHON_PACKAGES +
             (CONTAINERIZATION_PYTHON_PACKAGES if CONTAINERIZATION_TECHS else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
-          UNATTENDED_UPGRADES_SOURCES: '{{ UNATTENDED_UPGRADES_UBUNTU_SOURCES }}'
 
   - name: Systemwide changes
     hosts: localhost
@@ -477,6 +476,19 @@
           mode: u=r,g=r,o=r
           force: no
           remote_src: yes
+        tags: unattended-upgrades
+
+      - name: Determining unattended upgrades sources for additional repositories
+        ansible.builtin.include_tasks:
+          file: ./include_tasks/create_upgrade_source_for_repository.ansible.yml
+        loop: "{{ REPOSITORIES | map(attribute='repository') }}"
+        tags: unattended-upgrades
+
+      - name: Setting variable for unattended upgrades sources
+        ansible.builtin.set_fact:
+          UNATTENDED_UPGRADES_SOURCES: >-
+            {{ UNATTENDED_UPGRADES_UBUNTU_SOURCES +
+            UNATTENDED_UPGRADES_EXTRA_SOURCES }}
         tags: unattended-upgrades
 
       - name: Setting sources in 50unattended-upgrades

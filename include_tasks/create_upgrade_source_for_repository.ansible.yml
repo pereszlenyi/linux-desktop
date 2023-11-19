@@ -1,0 +1,43 @@
+---
+  - name: Parsing the repository information
+    ansible.builtin.set_fact:
+      PACKAGE_INFO_FILENAME_TEMP: >-
+        {{ item | ansible.builtin.regex_replace('^deb .*https*://', '') |
+        split(' ') |
+        map('ansible.builtin.regex_replace', '/*$', '') |
+        map('replace', '/', '_') }}
+
+  - name: Getting the filename for package information
+    ansible.builtin.set_fact:
+      PACKAGE_INFO_FILENAME: >-
+        {{ "/var/lib/apt/lists/" +
+        PACKAGE_INFO_FILENAME_TEMP[0] +
+        ("_dists_" if PACKAGE_INFO_FILENAME_TEMP[1] != "" else "") +
+        PACKAGE_INFO_FILENAME_TEMP[1] +
+        "_InRelease" }}
+
+  - name: Verifying that the file exists
+    ansible.builtin.stat:
+      path: '{{ PACKAGE_INFO_FILENAME }}'
+    register: STATUS_OF_PACKAGE_INFO_FILE
+    failed_when: not STATUS_OF_PACKAGE_INFO_FILE['stat']['exists']
+
+  - name: Getting origin
+    ansible.builtin.shell:
+      cmd: >
+        /usr/bin/grep --extended-regexp "^Origin:" "{{ PACKAGE_INFO_FILENAME }}" |
+        /usr/bin/sed "s/^Origin:[[:space:]]*//g"
+      executable: /bin/bash
+    changed_when: false
+    register: PACKAGE_INFO_ORIGIN
+    failed_when: >-
+      (PACKAGE_INFO_ORIGIN is failed) or
+      (PACKAGE_INFO_ORIGIN['stdout_lines'] | length != 1) or
+      (PACKAGE_INFO_ORIGIN['stderr_lines'] != [])
+
+  - name: Adding source to extra sources
+    ansible.builtin.set_fact:
+      UNATTENDED_UPGRADES_EXTRA_SOURCES: >-
+        {{ UNATTENDED_UPGRADES_EXTRA_SOURCES | default([]) + [
+          '"' + (PACKAGE_INFO_ORIGIN['stdout'] | replace(':', '\:')) + ':' + PACKAGE_INFO_FILENAME_TEMP[1] + '";'
+        ] }}
