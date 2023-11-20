@@ -38,8 +38,14 @@
   - name: Adding source to extra sources
     vars:
       SOURCE_TO_ADD:
-        - origin: "{{ PACKAGE_INFO_ORIGIN['stdout'] | trim }}"
-          archive: "{{ PACKAGE_INFO_FILENAME_TEMP[1] }}"
+        - origin: >-
+            {{ PACKAGE_INFO_ORIGIN['stdout'] | trim |
+            replace(DISTRIBUTION, '${distro_id}') |
+            replace(UBUNTU_CODENAME, '${distro_codename}') }}
+          archive: >-
+            {{ PACKAGE_INFO_FILENAME_TEMP[1] |
+            replace(DISTRIBUTION, '${distro_id}') |
+            replace(UBUNTU_CODENAME, '${distro_codename}') }}
     ansible.builtin.set_fact:
       UNATTENDED_UPGRADES_EXTRA_SOURCES: >-
         {{ UNATTENDED_UPGRADES_EXTRA_SOURCES | default([]) +

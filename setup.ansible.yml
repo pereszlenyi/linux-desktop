@@ -139,6 +139,7 @@
       - name: Setting system variables
         ansible.builtin.set_fact:
           ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
+          DISTRIBUTION: "{{ ansible_facts['distribution'] }}"
           UBUNTU_CODENAME: "{{ ansible_facts['distribution_release'] }}"
           HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
           CURRENT_DIRECTORY: "{{ ansible_facts['env']['PWD'] }}"
