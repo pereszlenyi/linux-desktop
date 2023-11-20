@@ -177,6 +177,7 @@
             "^[[:space:]]*Unattended-Upgrade::Allowed-Origins[[:space:]]*{.*$"
             /etc/apt/apt.conf.d/50unattended-upgrades
         changed_when: false
+        tags: unattended-upgrades
         register: ALLOWED_ORIGINS_LINE
         failed_when: >-
           (ALLOWED_ORIGINS_LINE is failed) or
@@ -184,6 +185,7 @@
           (ALLOWED_ORIGINS_LINE['stderr_lines'] != [])
 
       - name: Setting variables for unattended-upgrades
+        tags: unattended-upgrades
         ansible.builtin.set_fact:
           UNATTENDED_UPGRADES_CONFIGURATION_FILES:
             - 10periodic
@@ -465,7 +467,9 @@
           src: ./templates/unattended-upgrades.{{ item }}.j2
           dest: /etc/apt/apt.conf.d/{{ item }}
           mode: u=rw,g=r,o=r
-        notify: reboot required
+        notify:
+          - reboot required
+          - unattended-upgrades configuration changed
         loop: '{{ UNATTENDED_UPGRADES_CONFIGURATION_FILES }}'
         tags: unattended-upgrades
 
@@ -497,7 +501,9 @@
           search_string: "{{ item | trim }}"
           line: "\t{{ item | trim }}"
           insertafter: "{{ ALLOWED_ORIGINS_LINE['stdout'] }}"
-        notify: reboot required
+        notify:
+          - reboot required
+          - unattended-upgrades configuration changed
         loop: '{{ UNATTENDED_UPGRADES_SOURCES }}'
         tags: unattended-upgrades
 
@@ -506,7 +512,9 @@
           path: /etc/apt/apt.conf.d/50unattended-upgrades
           search_string: "{{ item['search_string'] }}"
           line: "{{ item['line'] }}"
-        notify: reboot required
+        notify:
+          - reboot required
+          - unattended-upgrades configuration changed
         loop: '{{ UNATTENDED_UPGRADES_OPTION_LINES }}'
         tags: unattended-upgrades
 
@@ -525,6 +533,12 @@
           state: touch
           mode: u=rw,g=r,o=r
         listen: reboot required
+
+      - name: Running unattended-upgrades
+        ansible.builtin.command:
+          cmd: /usr/bin/unattended-upgrade --debug
+        tags: unattended-upgrades
+        listen: unattended-upgrades configuration changed
 
   - name: Setting up the environment for the current user
     hosts: localhost
