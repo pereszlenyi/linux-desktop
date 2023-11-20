@@ -36,8 +36,11 @@
       (PACKAGE_INFO_ORIGIN['stderr_lines'] != [])
 
   - name: Adding source to extra sources
+    vars:
+      SOURCE_TO_ADD:
+        - origin: "{{ PACKAGE_INFO_ORIGIN['stdout'] | trim }}"
+          archive: "{{ PACKAGE_INFO_FILENAME_TEMP[1] }}"
     ansible.builtin.set_fact:
       UNATTENDED_UPGRADES_EXTRA_SOURCES: >-
-        {{ UNATTENDED_UPGRADES_EXTRA_SOURCES | default([]) + [
-          '"' + (PACKAGE_INFO_ORIGIN['stdout'] | replace(':', '\:')) + ':' + PACKAGE_INFO_FILENAME_TEMP[1] + '";'
-        ] }}
+        {{ UNATTENDED_UPGRADES_EXTRA_SOURCES | default([]) +
+        SOURCE_TO_ADD }}

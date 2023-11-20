@@ -191,11 +191,16 @@
             - 10periodic
             - 20auto-upgrades
           UNATTENDED_UPGRADES_UBUNTU_SOURCES:
-            - "\"${distro_id}:${distro_codename}\";"
-            - "\"${distro_id}:${distro_codename}-security\";"
-            - "\"${distro_id}ESMApps:${distro_codename}-apps-security\";"
-            - "\"${distro_id}ESM:${distro_codename}-infra-security\";"
-            - "\"${distro_id}:${distro_codename}-updates\";"
+            - origin: ${distro_id}
+              archive: ${distro_codename}
+            - origin: ${distro_id}
+              archive: ${distro_codename}-security
+            - origin: ${distro_id}ESMApps
+              archive: ${distro_codename}-apps-security
+            - origin: ${distro_id}ESM
+              archive: ${distro_codename}-infra-security
+            - origin: ${distro_id}
+              archive: ${distro_codename}-updates
           UNATTENDED_UPGRADES_OPTION_LINES:
             - search_string: >-
                 Unattended-Upgrade::AutoFixInterruptedDpkg
@@ -495,6 +500,16 @@
             UNATTENDED_UPGRADES_EXTRA_SOURCES }}
         tags: unattended-upgrades
 
+      - name: Setting variable for lines in 50unattended-upgrades
+        ansible.builtin.set_fact:
+          UNATTENDED_UPGRADES_SOURCE_LINES: >-
+            {{ UNATTENDED_UPGRADES_SOURCE_LINES | default([]) + [
+              '"' + (item['origin'] | replace(':', '\:')) + ':' +
+              (item['archive'] | replace(':', '\:')) + '";'
+            ] }}
+        loop: '{{ UNATTENDED_UPGRADES_SOURCES }}'
+        tags: unattended-upgrades
+
       - name: Setting sources in 50unattended-upgrades
         ansible.builtin.lineinfile:
           path: /etc/apt/apt.conf.d/50unattended-upgrades
@@ -504,7 +519,7 @@
         notify:
           - reboot required
           - unattended-upgrades configuration changed
-        loop: '{{ UNATTENDED_UPGRADES_SOURCES }}'
+        loop: '{{ UNATTENDED_UPGRADES_SOURCE_LINES }}'
         tags: unattended-upgrades
 
       - name: Setting options in 50unattended-upgrades
@@ -927,7 +942,7 @@
         when: item not in APT_CONFIGURATION_DUMP['stdout_lines']
         loop: >-
           {{ (['Unattended-Upgrade::Allowed-Origins::']
-              | product(UNATTENDED_UPGRADES_SOURCES | map('trim'))
+              | product(UNATTENDED_UPGRADES_SOURCE_LINES | map('trim'))
               | map('join', ' ')) +
              (UNATTENDED_UPGRADES_OPTION_LINES | map(attribute='line')) +
              UNATTENDED_UPGRADES_CONFIGURATION_FROM_FILES['stdout_lines'] }}
