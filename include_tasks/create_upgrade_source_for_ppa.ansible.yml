@@ -1,0 +1,40 @@
+---
+  - name: Getting the filename for package information
+    ansible.builtin.set_fact:
+      PACKAGE_INFO_FILENAME: >-
+        {{ "/var/lib/apt/lists/ppa.launchpad.net_" +
+        (item | replace('/', '_')) +
+        "_ubuntu_dists_" + UBUNTU_CODENAME + "_InRelease" }}
+
+  - name: Verifying that the file exists
+    ansible.builtin.stat:
+      path: '{{ PACKAGE_INFO_FILENAME }}'
+    register: STATUS_OF_PACKAGE_INFO_FILE
+    failed_when: not STATUS_OF_PACKAGE_INFO_FILE['stat']['exists']
+
+  - name: Getting origin
+    ansible.builtin.shell:
+      cmd: >
+        /usr/bin/grep --extended-regexp "^Origin:" "{{ PACKAGE_INFO_FILENAME }}" |
+        /usr/bin/sed "s/^Origin:[[:space:]]*//g"
+      executable: /bin/bash
+    changed_when: false
+    register: PACKAGE_INFO_ORIGIN
+    failed_when: >-
+      (PACKAGE_INFO_ORIGIN is failed) or
+      (PACKAGE_INFO_ORIGIN['stdout_lines'] | length != 1) or
+      (PACKAGE_INFO_ORIGIN['stderr_lines'] != [])
+
+  - name: Adding source to extra sources
+    vars:
+      SOURCE_TO_ADD:
+        - origin: >-
+            {{ PACKAGE_INFO_ORIGIN['stdout'] | trim |
+            replace(DISTRIBUTION, '${distro_id}') |
+            replace(UBUNTU_CODENAME, '${distro_codename}') }}
+          archive: >-
+            '${distro_codename}'
+    ansible.builtin.set_fact:
+      UNATTENDED_UPGRADES_EXTRA_SOURCES: >-
+        {{ UNATTENDED_UPGRADES_EXTRA_SOURCES | default([]) +
+        SOURCE_TO_ADD }}

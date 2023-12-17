@@ -494,6 +494,12 @@
         loop: "{{ REPOSITORIES | map(attribute='repository') }}"
         tags: unattended-upgrades
 
+      - name: Determining unattended upgrades sources for PPAs
+        ansible.builtin.include_tasks:
+          file: ./include_tasks/create_upgrade_source_for_ppa.ansible.yml
+        loop: '{{ PPAS }}'
+        tags: unattended-upgrades
+
       - name: Setting variable for unattended upgrades sources
         ansible.builtin.set_fact:
           UNATTENDED_UPGRADES_SOURCES: >-
