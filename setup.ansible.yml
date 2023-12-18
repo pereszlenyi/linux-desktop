@@ -520,7 +520,8 @@
       - name: Setting sources in 50unattended-upgrades
         ansible.builtin.lineinfile:
           path: /etc/apt/apt.conf.d/50unattended-upgrades
-          search_string: "{{ item | trim }}"
+          search_string: >-
+            {{ item | ansible.builtin.regex_replace('v[0-9]+\.[0-9]+.*$', '') | trim }}
           line: "\t{{ item | trim }}"
           insertafter: "{{ ALLOWED_ORIGINS_LINE['stdout'] }}"
         notify:
