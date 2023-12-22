@@ -107,3 +107,7 @@ NEW_PROMPT=$(replace_regex "@\\\\h\\\\" \
 NEW_PROMPT=$(replace_regex "debian_chroot)}\\\\" "debian_chroot)}\$(exit_status)\\\\" "$NEW_PROMPT")
 
 PS1="$NEW_PROMPT"
+
+# Secondary prompt for multi-line commands.
+SECONDARY_PROMPT_CHAR=$(echo -e '\u21AA')
+PS2="\\[\\033[${PROMPT_SEPARATOR_COLOR}\\]${SECONDARY_PROMPT_CHAR}\\[\\033[00m\\] "
