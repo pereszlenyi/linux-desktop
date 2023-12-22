@@ -33,7 +33,7 @@
             replace(DISTRIBUTION, '${distro_id}') |
             replace(UBUNTU_CODENAME, '${distro_codename}') }}
           archive: >-
-            '${distro_codename}'
+            ${distro_codename}
     ansible.builtin.set_fact:
       UNATTENDED_UPGRADES_EXTRA_SOURCES: >-
         {{ UNATTENDED_UPGRADES_EXTRA_SOURCES | default([]) +
