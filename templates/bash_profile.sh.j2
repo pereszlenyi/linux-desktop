@@ -72,6 +72,16 @@ function replace_regex {
 	/usr/bin/sed "s/$1/$2/g" <<<"$3"
 }
 
+# Displays the exit status of the previous command.
+function exit_status {
+	if [ $? -eq 0 ] ; then
+		echo -e -n '\033[00;32m\u2714'
+	else
+		echo -e -n '\033[00;31m\u2718'
+	fi
+	echo -e '\033[00m'
+}
+
 PROMPT_SEPARATOR_COLOR="00;33m"
 
 # Setting a color for the '$' at the end
@@ -81,5 +91,7 @@ NEW_PROMPT=$(replace_regex "\\[00m\\\\]:" "[$PROMPT_SEPARATOR_COLOR\\\\]:" "$NEW
 # Setting a color for the '@'.
 NEW_PROMPT=$(replace_regex "@\\\\h\\\\" \
 	"\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\]@\\\\[\\\\033[01;32m\\\\]\\\\h\\\\" "$NEW_PROMPT")
+# Displaying the exit status of the previous command in front of the prompt.
+NEW_PROMPT=$(replace_regex "debian_chroot)}\\\\" "debian_chroot)}\$(exit_status)\\\\" "$NEW_PROMPT")
 
 PS1="$NEW_PROMPT"
