@@ -82,10 +82,22 @@ function exit_status {
 	echo -e '\033[00m'
 }
 
+# Displays the current Git branch and a star, if there are modified files.
+function git_info_prompt {
+	if /usr/bin/git rev-parse --is-inside-work-tree &>/dev/null ; then
+		echo -e -n ' \033[01;31m(' && \
+		/usr/bin/git branch --show-current | /usr/bin/tr --delete '\n' && \
+		echo -n ')' && \
+		if /usr/bin/git status --porcelain --untracked-files=no | /usr/bin/grep --extended-regexp '.' &>/dev/null ; then
+			echo -e -n '\033[01;35m*'
+		fi
+	fi
+}
+
 PROMPT_SEPARATOR_COLOR="00;33m"
 
-# Setting a color for the '$' at the end
-NEW_PROMPT=$(replace_regex "00m\\\\\\]\\\\\$ \$" "$PROMPT_SEPARATOR_COLOR\\\\] \\\\\$\\\\[\\\\033[00m\\\\] " "$PS1")
+# Displaying information about the current Git repository and setting a color for the '$' at the end.
+NEW_PROMPT=$(replace_regex "\\\\\\[\\\\033\\[00m\\\\\\]\\\\\$ \$" "\$(git_info_prompt)\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\] \\\\\$\\\\[\\\\033[00m\\\\] " "$PS1")
 # Setting a color for the colon.
 NEW_PROMPT=$(replace_regex "\\[00m\\\\]:" "[$PROMPT_SEPARATOR_COLOR\\\\]:" "$NEW_PROMPT")
 # Setting a color for the '@'.
