@@ -380,7 +380,7 @@
 
       - name: Adding repositories
         ansible.builtin.include_tasks:
-          file: ./apt_repository.ansible.yml
+          file: ./include_tasks/apt_repository.ansible.yml
         loop: '{{ REPOSITORIES }}'
 
       - name: Removing old versions of Docker
