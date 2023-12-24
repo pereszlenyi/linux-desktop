@@ -195,7 +195,7 @@ scrollback_lines=500
 shell=/bin/bash
 colour_fore=#FFFFFF
 colour_back=#000000
-last_dir=/home/{{ ansible_facts['user_id'] }}
+last_dir=/home/{{ USERNAME }}
 
 [tools]
 terminal_cmd=x-terminal-emulator -e "/bin/sh %c"
@@ -213,7 +213,7 @@ page_header_datefmt=%c
 
 [project]
 session_file=
-project_file_path=/home/{{ ansible_facts['user_id'] }}/projects
+project_file_path=/home/{{ USERNAME }}/projects
 
 [files]
 recent_files=

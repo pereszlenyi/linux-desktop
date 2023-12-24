@@ -1,4 +1,4 @@
-{{ ansible_facts['user_id'] }}
+{{ USERNAME }}
 {{ (ansible_facts['user_gecos'] | split(','))[0] | replace(" ", "\n") }}
 Ansible
 PowerShell

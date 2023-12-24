@@ -133,6 +133,11 @@
           msg: Can't find an alias for architecture '{{ ansible_facts['architecture'] }}'.
         when: ansible_facts['architecture'] not in ARCHITECTURE_ALIAS
 
+      - name: Exiting if FULLNAME or EMAIL are not defined
+        ansible.builtin.fail:
+          msg: Required variables FULLNAME or EMAIL are not defined.
+        when: (FULLNAME is undefined) or (EMAIL is undefined)
+
       - name: Populating service facts
         ansible.builtin.service_facts:
 
@@ -143,6 +148,9 @@
           UBUNTU_CODENAME: "{{ ansible_facts['distribution_release'] }}"
           HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
           CURRENT_DIRECTORY: "{{ ansible_facts['env']['PWD'] }}"
+          USERNAME: "{{ ansible_facts['user_id'] }}"
+          FULLNAME: "{{ FULLNAME | trim }}"
+          EMAIL: "{{ EMAIL | trim }}"
           SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
           CONTAINERIZATION_TECHS: "{{ (INSTALL_CONTAINERIZATION_TECHS | default('false')) == 'true' }}"
           INSTALL_JAVA: "{{ (INSTALL_JAVA_TOOLS | default('false')) == 'true' }}"
@@ -414,7 +422,7 @@
 
       - name: Adding the user to the docker group
         ansible.builtin.user:
-          name: "{{ ansible_facts['env']['SUDO_USER'] }}"
+          name: "{{ USERNAME }}"
           groups: docker
           append: yes
         notify: reboot required
@@ -549,6 +557,12 @@
         notify: reboot required
         tags: wsl.conf
 
+      - name: Setting the full name in /etc/passwd
+        ansible.builtin.command:
+          cmd: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ USERNAME }}
+        ignore_errors: yes
+        when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
+
     handlers:
       - name: Touching /var/run/reboot-required
         ansible.builtin.file:
@@ -585,11 +599,6 @@
           checksum: 548ebab2e3615b78f04f91b5a50b208540a91df26304a5c22b802fb31ff1b9bf6c3cbcf18e81c7ce4a67337bd9702ea5b09f033a34b1f4ee2d9eba49e07fc942
 
     tasks:
-
-      - name: Exiting if FULLNAME or EMAIL are not defined
-        ansible.builtin.fail:
-          msg: Required variables FULLNAME or EMAIL are not defined.
-        when: (FULLNAME is undefined) or (EMAIL is undefined)
 
       - name: Getting the status of /var/run/reboot-required
         ansible.builtin.stat:
@@ -829,13 +838,6 @@
           mode: u=rw,g=,o=
           force: no
         loop: '{{ CONFIGURATION_FILES }}'
-
-      - name: Setting the full name in /etc/passwd
-        ansible.builtin.command:
-          cmd: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ ansible_facts['user_id'] }}
-        become: yes
-        ignore_errors: yes
-        when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
 
       - name: Getting the status of ~/.local/bin/pip3
         ansible.builtin.stat:
