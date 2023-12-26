@@ -11,12 +11,12 @@ CUT=/usr/bin/cut
 UBUNTU_SIGNING_KEY="0x843938DF228D22F7B3742BC0D94AA3F0EFE21092"
 
 function die {
-	$ECHO "Error: $1"
+	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
 	exit 1
 }
 
 for FILE in "$ECHO" "$GPG" "$GREP" "$CUT" ; do
-	[ -x "$FILE" ] || die "'$FILE' doesn't exist or not executable."
+	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
 [ ! $# == 2 ] && die "Usage: $0 \"Full Name\" email_address@example.com"

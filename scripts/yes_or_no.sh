@@ -8,12 +8,12 @@ ECHO=/usr/bin/echo
 TR=/usr/bin/tr
 
 function die {
-	$ECHO "Error: $1"
+	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
 	exit 2
 }
 
 for FILE in "$ECHO" "$TR" ; do
-	[ -x "$FILE" ] || die "'$FILE' doesn't exist or not executable."
+	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
 [ ! $# == 1 ] && die "Usage: $0 \"Question\""

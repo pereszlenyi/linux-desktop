@@ -12,7 +12,7 @@ ADD_APT_REPO=/usr/bin/add-apt-repository
 ANSIBLE=/usr/bin/ansible-playbook
 
 function die {
-	$ECHO "Error: $1"
+	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
 	exit 1
 }
 

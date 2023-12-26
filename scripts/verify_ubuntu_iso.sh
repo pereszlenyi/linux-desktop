@@ -10,12 +10,12 @@ CUT=/usr/bin/cut
 SHA256SUM=/usr/bin/sha256sum
 
 function die {
-	$ECHO "Error: $1"
+	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
 	exit 1
 }
 
 for FILE in "$ECHO" "$GPG" "$GREP" "$CUT" "$SHA256SUM" ; do
-	[ -x "$FILE" ] || die "'$FILE' doesn't exist or not executable."
+	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
 [ ! $# == 1 ] && die "Usage: $0 image_filename"
