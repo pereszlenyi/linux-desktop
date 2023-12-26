@@ -30,6 +30,8 @@ alias upgrade_system='/usr/bin/sudo /bin/bash -c \
 	"/usr/bin/aptitude update && /usr/bin/aptitude full-upgrade && /usr/bin/aptitude autoclean \
 	&& /usr/bin/snap refresh"'
 alias verify_ubuntu_iso='{{ CURRENT_DIRECTORY }}/scripts/verify_ubuntu_iso.sh'
+alias encrypt='{{ CURRENT_DIRECTORY }}/scripts/encrypt.sh'
+alias decrypt='{{ CURRENT_DIRECTORY }}/scripts/decrypt.sh'
 
 # Signed commit
 alias git_commit='/usr/bin/git commit -S'
