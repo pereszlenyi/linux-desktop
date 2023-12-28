@@ -258,6 +258,7 @@
     hosts: localhost
     connection: local
     become: yes
+    tags: system
 
     tasks:
 
@@ -956,7 +957,9 @@
               | map('join', ' ')) +
              (UNATTENDED_UPGRADES_OPTION_LINES | map(attribute='line')) +
              UNATTENDED_UPGRADES_CONFIGURATION_FROM_FILES['stdout_lines'] }}
-        tags: unattended-upgrades
+        tags:
+          - unattended-upgrades
+          - system
 
       - name: Getting the list of all supported stable versions of Ubuntu
         ansible.builtin.command:
