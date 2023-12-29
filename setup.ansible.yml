@@ -317,6 +317,8 @@
             - curl
             - jq
             - unzip
+            - dialog
+            - ncurses-bin
             # Fonts
             - fonts-noto
             - fonts-recommended

@@ -12,6 +12,8 @@ GREP=/usr/bin/grep
 APTGET=/usr/bin/apt-get
 ADD_APT_REPO=/usr/bin/add-apt-repository
 ANSIBLE=/usr/bin/ansible-playbook
+DIALOG=/usr/bin/dialog
+CLEAR=/usr/bin/clear
 
 function die {
 	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
@@ -60,7 +62,7 @@ INSTALL_COMMAND="$ECHO \"=== Installing Ansible ===\" && \
 	$APTGET --assume-yes --fix-broken install && \
 	$APTGET --assume-yes dist-upgrade && \
 	$ADD_APT_REPO --yes --update ppa:ansible/ansible && \
-	$APTGET --assume-yes install ansible aptitude && \
+	$APTGET --assume-yes install ansible aptitude dialog ncurses-bin && \
 	$APTGET --assume-yes autoremove && \
 	$APTGET --assume-yes clean && \
 	$ECHO \"=== Ansible is installed ===\" && \
@@ -81,22 +83,48 @@ $ECHO "Using \"$FULLNAME\" as full name."
 $ECHO "Using \"$EMAIL\" as email."
 $ECHO ""
 
-INSTALL_CONTAINERIZATION_TECHS=false
-if ./scripts/yes_or_no.sh \
-	"Do you want to install containerization technologies such as Docker, Kubernetes, etc.?" ; then
-	INSTALL_CONTAINERIZATION_TECHS=true
-fi
-$ECHO ""
+function check_with_grep {
+	$GREP --fixed-strings "$1" &>/dev/null && \
+	$ECHO "true" || \
+	$ECHO "false"
+}
 
+function create_dialog {
+	$DIALOG --no-tags --checklist "Install these additional components:" 0 0 0 \
+	container "Containerization technologies such as Docker, Kubernetes, etc." off \
+	java "Development tools for Java" off || \
+	die "Internal error: Failed to create the dialog."
+}
+
+INSTALL_CONTAINERIZATION_TECHS=false
 INSTALL_JAVA_TOOLS=false
 JDK_VERSION=17
-if ./scripts/yes_or_no.sh \
-	"Do you want to develop in Java?" ; then
-	INSTALL_JAVA_TOOLS=true
+
+if [ ! -x "$DIALOG" ] || [ ! -x "$CLEAR" ] ; then
+	$ECHO "Note: Defaulting to basic installation since required applications are missing."
+	$ECHO "After successfully finishing this installation, run $FILENAME again"
+	$ECHO "if you want to set additional installation options."
+	$ECHO ""
+elif ./scripts/yes_or_no.sh \
+	"Do you want to run the basic installation? Answering no will give additional installation options." ; then
+	$ECHO ""
+else
+	# Creating a copy of stdout on descriptor 3
+	exec 3>&1
+	DIALOG_RESULT=$(create_dialog 2>&1 1>&3)
+	# Closing file descriptor 3
+	exec 3>&-
+	$CLEAR
+
+	INSTALL_CONTAINERIZATION_TECHS=$(check_with_grep "container" <<<"$DIALOG_RESULT")
+	INSTALL_JAVA_TOOLS=$(check_with_grep "java" <<<"$DIALOG_RESULT")
+fi
+
+if [ "$INSTALL_JAVA_TOOLS" == "true" ] ; then
 	$ECHO "Azul Zulu build of OpenJDK version ${JDK_VERSION} will be installed."
 	$ECHO "If you want to change the version, set variable JDK_VERSION in $FILENAME."
+	$ECHO ""
 fi
-$ECHO ""
 
 $ECHO "=== Running Ansible playbook ==="
 $ANSIBLE_COMMAND \
