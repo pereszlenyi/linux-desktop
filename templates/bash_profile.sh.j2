@@ -34,23 +34,58 @@ alias encrypt='{{ CURRENT_DIRECTORY }}/scripts/encrypt.sh'
 alias decrypt='{{ CURRENT_DIRECTORY }}/scripts/decrypt.sh'
 
 # Signed commit
-alias git_commit='/usr/bin/git commit -S'
+alias git_commit='/usr/bin/git commit --gpg-sign'
 # Push with reduced verbosity
 alias git_push='/usr/bin/git push --quiet'
 # Prints all the details of the commits
 alias git_log_raw='/usr/bin/git log --format=raw --no-abbrev-commit --patch --unified=0'
 # Fetches updates from the remote repo before printing status
 alias git_status='/usr/bin/git fetch --quiet && /usr/bin/git status'
+# Creates a new branch
+alias git_create_branch='/usr/bin/git checkout -b'
+# Before merging, updates are pulled from the remotes
+function git_merge {
+	/usr/bin/git pull --quiet && \
+	/usr/bin/git switch --quiet "$1" && \
+	/usr/bin/git pull --quiet && \
+	/usr/bin/git switch --quiet - && \
+	/usr/bin/git merge --gpg-sign "$1" && \
+	echo -e "\n=== Git status ===" && \
+	/usr/bin/git status
+}
+# Deletes the current branch both locally and remotely
+function git_delete_branch {
+	BRANCH=$(/usr/bin/git branch --show-current)
+	if "{{ CURRENT_DIRECTORY }}/scripts/yes_or_no.sh" \
+		"Do you want to delete branch '$BRANCH' both locally and remotely?" ; then
+		echo "" && \
+		/usr/bin/git fetch --quiet && \
+		/usr/bin/git push --delete origin "$BRANCH" && \
+		/usr/bin/git switch --quiet - && \
+		/usr/bin/git branch -D "$BRANCH" && \
+		echo -e "\n=== Branch '$BRANCH' was deleted ==="
+	else
+		echo "Aborting."
+	fi
+}
 
 /usr/bin/git config --global user.name "$FULLNAME"
 /usr/bin/git config --global user.email "$EMAIL"
-/usr/bin/git config --global core.editor "/usr/bin/geany"
+/usr/bin/git config --global core.editor "{{ CURRENT_DIRECTORY }}/scripts/git_editor.sh"
 /usr/bin/git config --global core.autocrlf input
 /usr/bin/git config --global diff.tool meld
 /usr/bin/git config --global gpg.format ssh
 /usr/bin/git config --global user.signingkey "~/.ssh/{{ SSH_KEY_FILENAME }}.pub"
 /usr/bin/git config --global credential.helper "cache --timeout=36000"
 /usr/bin/git config --global init.defaultBranch main
+# The remote branch is created by push, if it doesn't exist
+/usr/bin/git config --global push.autoSetupRemote "true"
+# Defaults to merge when doing a pull
+/usr/bin/git config --global pull.rebase "false"
+# Moved lines of code are colored differently
+/usr/bin/git config --global diff.colorMoved "default"
+# Whitespace is only ignored at the end of lines when performing the move detection
+/usr/bin/git config --global diff.colorMovedWS "ignore-space-at-eol"
 {% if INSTALL_JAVA %}
 
 export JAVA_HOME="/usr/lib/jvm/zulu{{ JDK_VERSION }}-ca-{{ ARCHITECTURE }}"
