@@ -121,29 +121,56 @@ function exit_status {
 	echo -e '\033[00m'
 }
 
-# Displays the current Git branch and a star, if there are modified files.
-function git_info_prompt {
+# Displays a check mark if the previous command exited with success.
+function prompt_check_mark {
+	if [ $? -eq 0 ] ; then
+		echo -e '\u2714'
+	else
+		false
+	fi
+}
+
+# Displays an X mark if the previous command exited with error.
+function prompt_x_mark {
+	if [ $? -ne 0 ] ; then
+		echo -e '\u2718'
+	fi
+}
+
+# Displays the current Git branch in parentheses.
+function prompt_git_branch {
 	if /usr/bin/git rev-parse --is-inside-work-tree &>/dev/null ; then
-		echo -e -n ' \033[01;31m(' && \
+		echo -n ' (' && \
 		/usr/bin/git branch --show-current | /usr/bin/tr --delete '\n' && \
-		echo -n ')' && \
-		if /usr/bin/git status --porcelain --untracked-files=no | /usr/bin/grep --extended-regexp '.' &>/dev/null ; then
-			echo -e -n '\033[01;35m*'
-		fi
+		echo ')'
+	fi
+}
+
+# Displays a star, if there are modified files in the current Git working tree.
+function prompt_git_star {
+	if { /usr/bin/git rev-parse --is-inside-work-tree && \
+		/usr/bin/git status --porcelain --untracked-files=no | \
+		/usr/bin/grep --extended-regexp '.' ; } &>/dev/null
+	then
+		echo '*'
 	fi
 }
 
 PROMPT_SEPARATOR_COLOR="00;33m"
 
 # Displaying information about the current Git repository and setting a color for the '$' at the end.
-NEW_PROMPT=$(replace_regex "\\\\\\[\\\\033\\[00m\\\\\\]\\\\\$ \$" "\$(git_info_prompt)\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\] \\\\\$\\\\[\\\\033[00m\\\\] " "$PS1")
+NEW_PROMPT=$(replace_regex "\\\\\\[\\\\033\\[00m\\\\\\]\\\\\$ \$" \
+	"\\\\[\\\\033[01;31m\\\\]\$(prompt_git_branch)\\\\[\\\\033[01;35m\\\\]\$(prompt_git_star)\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\] \\\\\$\\\\[\\\\033[00m\\\\] " \
+	"$PS1")
 # Setting a color for the colon.
 NEW_PROMPT=$(replace_regex "\\[00m\\\\]:" "[$PROMPT_SEPARATOR_COLOR\\\\]:" "$NEW_PROMPT")
 # Setting a color for the '@'.
 NEW_PROMPT=$(replace_regex "@\\\\h\\\\" \
 	"\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\]@\\\\[\\\\033[01;32m\\\\]\\\\h\\\\" "$NEW_PROMPT")
 # Displaying the exit status of the previous command in front of the prompt.
-NEW_PROMPT=$(replace_regex "debian_chroot)}\\\\" "debian_chroot)}\$(exit_status)\\\\" "$NEW_PROMPT")
+NEW_PROMPT=$(replace_regex "debian_chroot)}\\\\\\[\\\\033\\[01;32m\\\\\\]" \
+	"debian_chroot)}\\\\[\\\\033[00;32m\\\\]\$(prompt_check_mark)\\\\[\\\\033[00;31m\\\\]\$(prompt_x_mark)\\\\[\\\\033[01;32m\\\\]" \
+	"$NEW_PROMPT")
 
 PS1="$NEW_PROMPT"
 
