@@ -47,7 +47,11 @@ done
 $ECHO "=== Setting up your Linux system ==="
 $ECHO ""
 
-if $GROUPS_CMD | $GREP "sudo" &>/dev/null ; then
+function has_sudo_rights {
+	$GROUPS_CMD | $GREP --fixed-strings "sudo" &>/dev/null
+}
+
+if has_sudo_rights ; then
 	ANSIBLE_COMMAND="$ANSIBLE --ask-become-pass"
 else
 	$ECHO "Note: The current user doesn't have sudo rights."
@@ -120,7 +124,7 @@ else
 	INSTALL_JAVA_TOOLS=$(check_with_grep "java" <<<"$DIALOG_RESULT")
 fi
 
-if [ "$INSTALL_JAVA_TOOLS" == "true" ] ; then
+if [ "$INSTALL_JAVA_TOOLS" == "true" ] && has_sudo_rights ; then
 	$ECHO "Azul Zulu build of OpenJDK version ${JDK_VERSION} will be installed."
 	$ECHO "If you want to change the version, set variable JDK_VERSION in $FILENAME."
 	$ECHO ""

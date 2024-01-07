@@ -944,7 +944,9 @@
           executable: /bin/bash
         register: APT_CONFIGURATION_DUMP
         changed_when: false
-        tags: unattended-upgrades
+        tags:
+          - unattended-upgrades
+          - system
 
       - name: Getting intended configuration from files
         ansible.builtin.command:
@@ -955,7 +957,9 @@
             | join(' ') }}
         register: UNATTENDED_UPGRADES_CONFIGURATION_FROM_FILES
         changed_when: false
-        tags: unattended-upgrades
+        tags:
+          - unattended-upgrades
+          - system
 
       - name: Verifying unattended-upgrades configuration
         ansible.builtin.fail:
