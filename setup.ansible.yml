@@ -285,6 +285,8 @@
             - ca-certificates
             - coreutils
             - grep
+            - tar
+            - findutils
             - bash-completion
             - sed
             - aptitude

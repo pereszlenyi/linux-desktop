@@ -3,7 +3,7 @@
 # This script sets up GPG for the current user.
 # Usage: setup_gpg.sh "Full Name" email_address@example.com
 
-ECHO=/usr/bin/echo
+ECHO="builtin echo"
 GPG=/usr/bin/gpg
 GREP=/usr/bin/grep
 CUT=/usr/bin/cut
@@ -15,7 +15,7 @@ function die {
 	exit 1
 }
 
-for FILE in "$ECHO" "$GPG" "$GREP" "$CUT" ; do
+for FILE in "$GPG" "$GREP" "$CUT" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 

@@ -20,10 +20,10 @@ alias srm='/usr/bin/srm -rvz'
 # Pulls the updates from the Git repository then runs the install script.
 alias run_install_script='/bin/bash -c \
 	"cd {{ CURRENT_DIRECTORY }} && \
-	/usr/bin/git pull --quiet && \
-	/usr/bin/echo \"=== Git status ===\" && \
+	/usr/bin/git pull --quiet --ff-only && \
+	builtin echo \"=== Git status ===\" && \
 	/usr/bin/git status --untracked-files=no && \
-	/usr/bin/echo \"\" && \
+	builtin echo \"\" && \
 	./install.sh"'
 # Updates all packages in the system
 alias upgrade_system='/usr/bin/sudo /bin/bash -c \

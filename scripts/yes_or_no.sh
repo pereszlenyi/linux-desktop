@@ -4,7 +4,7 @@
 # It returns 0 if the answer was yes or 1 if the answer was no.
 # Usage: yes_or_no.sh "Question"
 
-ECHO=/usr/bin/echo
+ECHO="builtin echo"
 TR=/usr/bin/tr
 
 function die {
@@ -12,9 +12,7 @@ function die {
 	exit 2
 }
 
-for FILE in "$ECHO" "$TR" ; do
-	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
-done
+[ -x "$TR" ] || die "'$TR' doesn't exist or it's not executable."
 
 [ ! $# == 1 ] && die "Usage: $0 \"Question\""
 

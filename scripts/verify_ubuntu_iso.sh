@@ -3,7 +3,7 @@
 # This script verifies a downloaded Ubuntu image.
 # Usage: verify_ubuntu_iso.sh image_filename
 
-ECHO=/usr/bin/echo
+ECHO="builtin echo"
 GPG=/usr/bin/gpg
 GREP=/usr/bin/grep
 CUT=/usr/bin/cut
@@ -14,7 +14,7 @@ function die {
 	exit 1
 }
 
-for FILE in "$ECHO" "$GPG" "$GREP" "$CUT" "$SHA256SUM" ; do
+for FILE in "$GPG" "$GREP" "$CUT" "$SHA256SUM" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 

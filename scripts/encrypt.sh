@@ -5,7 +5,7 @@
 
 PASSWORD_LENGTH=30
 
-ECHO=/usr/bin/echo
+ECHO="builtin echo"
 DIRNAME=/usr/bin/dirname
 BASENAME=/usr/bin/basename
 TOUCH=/usr/bin/touch
@@ -28,7 +28,7 @@ function die {
 	exit 1
 }
 
-for FILE in "$ECHO" "$DIRNAME" "$BASENAME" "$TOUCH" "$RM" "$MAKEPASSWD" "$PWDIR" \
+for FILE in "$DIRNAME" "$BASENAME" "$TOUCH" "$RM" "$MAKEPASSWD" "$PWDIR" \
 	"$MKDIR" "$SRM" "$TAR" "$REALPATH" "$ZIP" "$WC" "$GPG" "$MV" "$LS" "$XARGS" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done

@@ -3,7 +3,7 @@
 # Run this script to install and setup everything.
 # It is only meant to work with Ubuntu.
 
-ECHO=/usr/bin/echo
+ECHO="builtin echo"
 SUDO=/usr/bin/sudo
 DIRNAME=/usr/bin/dirname
 BASENAME=/usr/bin/basename
@@ -20,7 +20,7 @@ function die {
 	exit 1
 }
 
-for FILE in "$ECHO" "$SUDO" "$DIRNAME" "$BASENAME" "$GROUPS_CMD" "$GREP" "$APTGET" "$ADD_APT_REPO" ; do
+for FILE in "$SUDO" "$DIRNAME" "$BASENAME" "$GROUPS_CMD" "$GREP" "$APTGET" "$ADD_APT_REPO" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 

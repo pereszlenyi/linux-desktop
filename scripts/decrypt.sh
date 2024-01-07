@@ -3,7 +3,7 @@
 # This script decrypts a file that was encrypted with encrypt.sh.
 # Usage: decrypt.sh file_to_decrypt [destination_folder_to_decrypt_to]
 
-ECHO=/usr/bin/echo
+ECHO="builtin echo"
 DIRNAME=/usr/bin/dirname
 BASENAME=/usr/bin/basename
 RM=/usr/bin/rm
@@ -25,7 +25,7 @@ function die {
 	exit 1
 }
 
-for FILE in "$ECHO" "$DIRNAME" "$BASENAME" "$RM" "$MAKEPASSWD" "$PWDIR" \
+for FILE in "$DIRNAME" "$BASENAME" "$RM" "$MAKEPASSWD" "$PWDIR" \
 	"$MKDIR" "$SRM" "$TAR" "$REALPATH" "$ZIP" "$GPG" "$MV" "$LS" "$XARGS" "$HEAD" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
