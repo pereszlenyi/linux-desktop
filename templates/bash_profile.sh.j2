@@ -39,10 +39,14 @@ alias git_tag_and_push='{{ CURRENT_DIRECTORY }}/scripts/git_tag_and_push.sh'
 alias git_commit='/usr/bin/git commit --gpg-sign'
 # Push with reduced verbosity
 alias git_push='/usr/bin/git push --quiet'
+# Pull with reduced verbosity
+alias git_pull='/usr/bin/git pull --gpg-sign --no-edit --quiet'
 # Prints all the details of the commits
 alias git_log_raw='/usr/bin/git log --format=raw --no-abbrev-commit --patch --unified=0'
-# Fetches updates from the remote repo before printing status
+# Fetches updates from the remote repository before printing status
 alias git_status='/usr/bin/git fetch --quiet && /usr/bin/git status'
+# Fetches updates from the remote repository before switching branches
+alias git_switch='/usr/bin/git fetch --quiet && /usr/bin/git switch'
 # Creates a new branch
 alias git_create_branch='/usr/bin/git checkout -b'
 # Before merging, updates are pulled from the remotes
