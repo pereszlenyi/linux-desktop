@@ -34,6 +34,7 @@ alias encrypt='{{ CURRENT_DIRECTORY }}/scripts/encrypt.sh'
 alias decrypt='{{ CURRENT_DIRECTORY }}/scripts/decrypt.sh'
 alias git_commit_and_push='{{ CURRENT_DIRECTORY }}/scripts/git_commit_and_push.sh'
 alias git_tag_and_push='{{ CURRENT_DIRECTORY }}/scripts/git_tag_and_push.sh'
+alias git_merge='{{ CURRENT_DIRECTORY }}/scripts/git_merge.sh'
 
 # Signed commit
 alias git_commit='/usr/bin/git commit --gpg-sign'
@@ -49,16 +50,6 @@ alias git_status='/usr/bin/git fetch --quiet && /usr/bin/git status'
 alias git_switch='/usr/bin/git fetch --quiet && /usr/bin/git switch'
 # Creates a new branch
 alias git_create_branch='/usr/bin/git checkout -b'
-# Before merging, updates are pulled from the remotes
-function git_merge {
-	/usr/bin/git pull --quiet && \
-	/usr/bin/git switch --quiet "$1" && \
-	/usr/bin/git pull --quiet && \
-	/usr/bin/git switch --quiet - && \
-	/usr/bin/git merge --gpg-sign "$1" && \
-	echo -e "\n=== Git status ===" && \
-	/usr/bin/git status
-}
 # Deletes the current branch both locally and remotely
 function git_delete_branch {
 	BRANCH=$(/usr/bin/git branch --show-current)
