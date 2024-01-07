@@ -19,6 +19,14 @@ if [ -x "$BASH_PROFILE" ] ; then
 	. "$BASH_PROFILE" || die "Failed to run $BASH_PROFILE."
 fi
 
+# Checking if we are inside a Git working tree.
+$GIT rev-parse --is-inside-work-tree &>/dev/null || \
+die "You are not in a Git working directory."
+
+# Fetching updates from the remote repository.
+$GIT fetch --quiet || \
+die "Failed to connect to the remote repository."
+
 # Checking for command line parameters.
 if [ "$#" -ne 0 ] ; then
 	$ECHO "=== Adding files ==="
