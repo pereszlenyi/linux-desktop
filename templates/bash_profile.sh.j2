@@ -93,6 +93,8 @@ export PATH="${JAVA_HOME}/bin:{{ CURRENT_DIRECTORY }}/bin/apache-maven-{{ MAVEN_
 
 # Adding Helm to the path
 export PATH="{{ HELM_INSTALL_DIRECTORY }}/linux-{{ ARCHITECTURE }}:${PATH}"
+# Setting the default text editor for kubectl
+export KUBE_EDITOR="{{ CURRENT_DIRECTORY }}/scripts/git_editor.sh"
 
 # Enabling kubectl autocompletion
 source <(/usr/bin/kubectl completion bash)
