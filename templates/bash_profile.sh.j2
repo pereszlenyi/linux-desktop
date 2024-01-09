@@ -153,11 +153,42 @@ function prompt_git_star {
 	fi
 }
 
+# Calculates the length (number of characters) of the prompt
+function prompt_length {
+	LENGTH=$(/usr/bin/wc --chars <<<"${USER}${HOSTNAME}${PWD}$(prompt_git_branch)")
+	if /usr/bin/grep --extended-regexp "^${HOME}" <<<"$PWD" &>/dev/null ; then
+		(( LENGTH -= $(/usr/bin/wc --chars <<<"$HOME") - 2 ))
+	fi
+	(( LENGTH += 4 ))
+	echo $LENGTH
+}
+
+# Determines if the prompt is long.
+# True, if the length of the prompt is more than
+# half of the width of the terminal.
+function is_long_prompt {
+	(( $(prompt_length) + 3 > $(/usr/bin/tput cols) / 2 ))
+}
+
+# Prints a new line if the prompt is long.
+function prompt_newline {
+	if is_long_prompt ; then
+		echo -e "\n "
+	fi
+}
+
+# Prints an arrow if the prompt is long.
+function prompt_newline_arrow {
+	if is_long_prompt ; then
+		echo -e "\u2BA1"
+	fi
+}
+
 PROMPT_SEPARATOR_COLOR="00;33m"
 
 # Displaying information about the current Git repository and setting a color for the '$' at the end.
 NEW_PROMPT=$(replace_regex "\\\\\\[\\\\033\\[00m\\\\\\]\\\\\$ \$" \
-	"\\\\[\\\\033[01;31m\\\\]\$(prompt_git_branch)\\\\[\\\\033[01;35m\\\\]\$(prompt_git_star)\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\] \\\\\$\\\\[\\\\033[00m\\\\] " \
+	"\\\\[\\\\033[01;31m\\\\]\$(prompt_git_branch)\\\\[\\\\033[01;35m\\\\]\$(prompt_git_star)\$(prompt_newline)\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\]\$(prompt_newline_arrow) \\\\\$\\\\[\\\\033[00m\\\\] " \
 	"$PS1")
 # Setting a color for the colon.
 NEW_PROMPT=$(replace_regex "\\[00m\\\\]:" "[$PROMPT_SEPARATOR_COLOR\\\\]:" "$NEW_PROMPT")
