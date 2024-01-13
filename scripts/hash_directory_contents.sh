@@ -16,6 +16,8 @@ SHA_SUM=/usr/bin/sha512sum
 CUT=/usr/bin/cut
 HOSTNAME_CMD=/usr/bin/hostname
 DATE=/usr/bin/date
+DIALOG=/usr/bin/dialog
+CLEAR=/usr/bin/clear
 
 function die {
 	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
@@ -27,7 +29,7 @@ function die_internal_error {
 }
 
 for FILE in "$DIRNAME" "$TOUCH" "$RM" "$REALPATH" "$WC" "$GREP" "$FIND" "$SORT" \
-	"$SHA_SUM" "$CUT" "$HOSTNAME_CMD" "$DATE"
+	"$SHA_SUM" "$CUT" "$HOSTNAME_CMD" "$DATE" "$DIALOG" "$CLEAR"
 do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
@@ -95,15 +97,35 @@ NUMBER_OF_FILES=$($WC --lines <<<"$FILES") || die_internal_error
 	$ECHO -e "\n=== Checksums ===" ;
 } >"$OUTPUT_FILE" || die_internal_error
 
+SECONDS=0
+function print_elapsed_time {
+	$DATE --utc --date="@${SECONDS}" "+%T"
+}
+
+FILES_DONE=0
+GAUGE_WIDTH=60
+function show_progress {
+	echo $(( FILES_DONE * 100 / NUMBER_OF_FILES )) | \
+	$DIALOG --title "Calculating checksums" --gauge \
+	"\nRoot directory: ${INPUT_DIRECTORY:0:(( GAUGE_WIDTH - 20))}\nFile: ${1:2:(( GAUGE_WIDTH - 10))}\nElapsed time: $(print_elapsed_time)" \
+	10 $GAUGE_WIDTH || \
+	die_internal_error
+}
+
 # Calculating hashes
+$CLEAR
 for FILE in $($SORT <<<"$FILES") ; do
+	show_progress "$FILE"
 	SHA_OUTPUT=$($SHA_SUM "$FILE") || \
 	die "Failed to calculate the hash of '$FILE'."
 	HASH=$($CUT --delimiter=' ' --fields=1 <<<"$SHA_OUTPUT") || \
 	die "Failed to calculate the hash of '$FILE'."
 	$ECHO "${FILE:2}   $HASH" >>"$OUTPUT_FILE" || die_internal_error
+	(( FILES_DONE++ ))
 done
+show_progress ""
 
 $ECHO "=== End of checksums ===" >>"$OUTPUT_FILE" || die_internal_error
+$CLEAR
 $ECHO "Successfully calculated the checksum of $NUMBER_OF_FILES files." && \
 $ECHO "Results are written to '$OUTPUT_FILE'." || die_internal_error
