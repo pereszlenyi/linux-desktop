@@ -120,18 +120,12 @@ function exit_status {
 
 # Displays a check mark if the previous command exited with success.
 function prompt_check_mark {
-	if [ $? -eq 0 ] ; then
-		echo -e '\u2714'
-	else
-		false
-	fi
+	[ $? -eq 0 ] && echo -e '\u2714'
 }
 
 # Displays an X mark if the previous command exited with error.
 function prompt_x_mark {
-	if [ $? -ne 0 ] ; then
-		echo -e '\u2718'
-	fi
+	[ $? -ne 0 ] && echo -e '\u2718'
 }
 
 # Displays the current Git branch in parentheses.
@@ -172,23 +166,20 @@ function is_long_prompt {
 
 # Prints a new line if the prompt is long.
 function prompt_newline {
-	if is_long_prompt ; then
-		echo -e "\n "
-	fi
+	is_long_prompt && echo -e "\n "
 }
 
-# Prints an arrow if the prompt is long.
+# Prints an arrow if the previous command was successful.
 function prompt_newline_arrow {
-	if is_long_prompt ; then
-		echo -e "\u2BA1"
-	fi
+	[ $? -eq 0 ] && echo -e "\u2BA1"
 }
 
 PROMPT_SEPARATOR_COLOR="00;33m"
+INPUT_COLOR="00;97m"
 
 # Displaying information about the current Git repository and setting a color for the '$' at the end.
 NEW_PROMPT=$(replace_regex "\\\\\\[\\\\033\\[00m\\\\\\]\\\\\$ \$" \
-	"\\\\[\\\\033[01;31m\\\\]\$(prompt_git_branch)\\\\[\\\\033[01;35m\\\\]\$(prompt_git_star)\$(prompt_newline)\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\]\$(prompt_newline_arrow) \\\\\$\\\\[\\\\033[00m\\\\] " \
+	"\\\\[\\\\033[01;31m\\\\]\$(prompt_git_branch)\\\\[\\\\033[01;35m\\\\]\$(prompt_git_star)\$(prompt_newline)\\\\[\\\\033[$PROMPT_SEPARATOR_COLOR\\\\]\$(prompt_newline_arrow) \\\\\$\\\\[\\\\033[$INPUT_COLOR\\\\] " \
 	"$PS1")
 # Setting a color for the colon.
 NEW_PROMPT=$(replace_regex "\\[00m\\\\]:" "[$PROMPT_SEPARATOR_COLOR\\\\]:" "$NEW_PROMPT")
@@ -200,8 +191,13 @@ NEW_PROMPT=$(replace_regex "debian_chroot)}\\\\\\[\\\\033\\[01;32m\\\\\\]" \
 	"debian_chroot)}\\\\[\\\\033[00;32m\\\\]\$(prompt_check_mark)\\\\[\\\\033[00;31m\\\\]\$(prompt_x_mark)\\\\[\\\\033[01;32m\\\\]" \
 	"$NEW_PROMPT")
 
-PS1="$NEW_PROMPT"
+if [ "$PS1" != "$NEW_PROMPT" ] ; then
+	PS1="$NEW_PROMPT"
 
-# Secondary prompt for multi-line commands.
-SECONDARY_PROMPT_CHAR=$(echo -e '\u21AA')
-PS2="\\[\\033[${PROMPT_SEPARATOR_COLOR}\\]${SECONDARY_PROMPT_CHAR}\\[\\033[00m\\] "
+	# Secondary prompt for multi-line commands.
+	SECONDARY_PROMPT_CHAR=$(echo -e '\u21AA')
+	PS2="\\[\\033[${PROMPT_SEPARATOR_COLOR}\\]${SECONDARY_PROMPT_CHAR}\\[\\033[$INPUT_COLOR\\] "
+
+	# Setting the default color for the output of commands.
+	PS0="\\[\\033[00m\\]"
+fi
