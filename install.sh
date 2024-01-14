@@ -20,23 +20,29 @@ function die {
 	exit 1
 }
 
-for FILE in "$SUDO" "$DIRNAME" "$BASENAME" "$GROUPS_CMD" "$GREP" "$APTGET" "$ADD_APT_REPO" ; do
+function die_internal_error {
+	die "Internal error."
+}
+
+for FILE in "$SUDO" "$DIRNAME" "$BASENAME" "$GROUPS_CMD" "$GREP" "$APTGET" "$ADD_APT_REPO"
+do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
-FILENAME=$($BASENAME "$0")
+FILENAME=$($BASENAME "$0") || die_internal_error
 [ $# == 0 ] || die "$FILENAME doesn't accept any parameters."
 
 function check_ansible {
 	[ -x "$ANSIBLE" ]
 }
 
-DIR=$($DIRNAME "$0")
-cd $DIR || die "Can't enter $DIR."
+DIR=$($DIRNAME "$0") || die_internal_error
+cd "$DIR" || die "Can't enter '$DIR'."
 
 for FILE in setup.ansible.yml ansible.cfg include_tasks/apt_repository.ansible.yml \
 	include_tasks/create_upgrade_source_for_ppa.ansible.yml \
-	include_tasks/create_upgrade_source_for_repository.ansible.yml ; do
+	include_tasks/create_upgrade_source_for_repository.ansible.yml
+do
 	[ -r "./$FILE" ] || die "$FILE is missing or not readable."
 done
 
@@ -44,8 +50,8 @@ for FILE in yes_or_no.sh setup_gpg.sh ; do
 	[ -x "./scripts/$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
-$ECHO "=== Setting up your Linux system ==="
-$ECHO ""
+$ECHO "=== Setting up your Linux system ===" && \
+$ECHO "" || die_internal_error
 
 function has_sudo_rights {
 	$GROUPS_CMD | $GREP --fixed-strings "sudo" &>/dev/null
@@ -54,10 +60,10 @@ function has_sudo_rights {
 if has_sudo_rights ; then
 	ANSIBLE_COMMAND="$ANSIBLE --ask-become-pass"
 else
-	$ECHO "Note: The current user doesn't have sudo rights."
+	$ECHO "Note: The current user doesn't have sudo rights." || die_internal_error
 	check_ansible || die "You need to run this script first with a user that has sudo rights."
-	$ECHO "Systemwide changes will be skipped."
-	$ECHO ""
+	$ECHO "Systemwide changes will be skipped." && \
+	$ECHO "" || die_internal_error
 	ANSIBLE_COMMAND="$ANSIBLE --skip-tags system"
 fi
 
@@ -76,16 +82,16 @@ check_ansible || $SUDO /bin/bash -c "$INSTALL_COMMAND" || \
 die "Unable to install Ansible."
 check_ansible || die "Ansible is not installed."
 
-$ECHO "The following information will be used to configure Git."
-[ -z "$FULLNAME" ] && read -p "Enter your full name: " FULLNAME
+$ECHO "The following information will be used to configure Git." || die_internal_error
+[ -z "$FULLNAME" ] && { read -p "Enter your full name: " FULLNAME || die_internal_error ; }
 [ -z "$FULLNAME" ] && die "Full name can't be empty."
 
-[ -z "$EMAIL" ] && read -p "Enter your email: " EMAIL
+[ -z "$EMAIL" ] && { read -p "Enter your email: " EMAIL || die_internal_error ; }
 [ -z "$EMAIL" ] && die "Email can't be empty."
 
-$ECHO "Using \"$FULLNAME\" as full name."
-$ECHO "Using \"$EMAIL\" as email."
-$ECHO ""
+$ECHO "Using \"$FULLNAME\" as full name." && \
+$ECHO "Using \"$EMAIL\" as email." && \
+$ECHO "" || die_internal_error
 
 function check_with_grep {
 	$GREP --fixed-strings "$1" &>/dev/null && \
@@ -105,32 +111,32 @@ INSTALL_JAVA_TOOLS=false
 JDK_VERSION=17
 
 if [ ! -x "$DIALOG" ] || [ ! -x "$CLEAR" ] ; then
-	$ECHO "Note: Defaulting to basic installation since required applications are missing."
-	$ECHO "After successfully finishing this installation, run $FILENAME again"
-	$ECHO "if you want to set additional installation options."
-	$ECHO ""
+	$ECHO "Note: Defaulting to basic installation since required applications are missing." && \
+	$ECHO "After successfully finishing this installation, run $FILENAME again" && \
+	$ECHO "if you want to set additional installation options." && \
+	$ECHO "" || die_internal_error
 elif ./scripts/yes_or_no.sh \
 	"Do you want to run the basic installation? Answering no will give additional installation options." ; then
-	$ECHO ""
+	$ECHO "" || die_internal_error
 else
 	# Creating a copy of stdout on descriptor 3
 	exec 3>&1
-	DIALOG_RESULT=$(create_dialog 2>&1 1>&3)
+	DIALOG_RESULT=$(create_dialog 2>&1 1>&3) || die_internal_error
 	# Closing file descriptor 3
 	exec 3>&-
-	$CLEAR
+	$CLEAR || die_internal_error
 
-	INSTALL_CONTAINERIZATION_TECHS=$(check_with_grep "container" <<<"$DIALOG_RESULT")
-	INSTALL_JAVA_TOOLS=$(check_with_grep "java" <<<"$DIALOG_RESULT")
+	INSTALL_CONTAINERIZATION_TECHS=$(check_with_grep "container" <<<"$DIALOG_RESULT") && \
+	INSTALL_JAVA_TOOLS=$(check_with_grep "java" <<<"$DIALOG_RESULT") || die_internal_error
 fi
 
 if [ "$INSTALL_JAVA_TOOLS" == "true" ] && has_sudo_rights ; then
-	$ECHO "Azul Zulu build of OpenJDK version ${JDK_VERSION} will be installed."
-	$ECHO "If you want to change the version, set variable JDK_VERSION in $FILENAME."
-	$ECHO ""
+	$ECHO "Azul Zulu build of OpenJDK version ${JDK_VERSION} will be installed." && \
+	$ECHO "If you want to change the version, set variable JDK_VERSION in $FILENAME." && \
+	$ECHO "" || die_internal_error
 fi
 
-$ECHO "=== Running Ansible playbook ==="
+$ECHO "=== Running Ansible playbook ===" || die_internal_error
 $ANSIBLE_COMMAND \
 	--extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\" \
 	INSTALL_JAVA_TOOLS=\"$INSTALL_JAVA_TOOLS\" \
@@ -141,9 +147,9 @@ $ECHO "=== Install was SUCCESSFUL ===" || \
 die "Failed to run Ansible playbook. You can try shutting down and restarting WSL (by \"wsl.exe --shutdown\") then running $FILENAME again."
 
 if [ -e /var/run/reboot-required ] ; then
-	$ECHO ""
-	$ECHO "You have to shut down and restart WSL for the changes to take effect."
-	$ECHO "After restarting, you can run this install script again by executing 'run_install_script'."
+	$ECHO "" && \
+	$ECHO "You have to shut down and restart WSL for the changes to take effect." && \
+	$ECHO "After restarting, you can run this install script again by executing 'run_install_script'." && \
 	if ./scripts/yes_or_no.sh "Do you want to shut down WSL now?" ; then
 		wsl.exe --shutdown
 	else

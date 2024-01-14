@@ -15,37 +15,41 @@ function die {
 	exit 1
 }
 
+function die_internal_error {
+	die "Internal error."
+}
+
 for FILE in "$GPG" "$GREP" "$CUT" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
 [ ! $# == 2 ] && die "Usage: $0 \"Full Name\" email_address@example.com"
 
-function list_secret_key {
-	$GPG --list-secret-keys --with-colons "=$1"
-}
-
 USER_ID="$1 <$2>"
 
-if list_secret_key "$USER_ID" &>/dev/null; then
+function list_secret_key {
+	$GPG --list-secret-keys --with-colons "=$USER_ID"
+}
+
+if list_secret_key &>/dev/null; then
 	$ECHO "GPG key for '$USER_ID' is already present. Exiting."
 	exit 0
 fi
 
-$ECHO "Creating GPG key for '$USER_ID'..."
+$ECHO "Creating GPG key for '$USER_ID'..." && \
 $GPG --batch --passphrase '' --quick-generate-key "$USER_ID" rsa4096 default 5y 2>&1 || \
 die "Failed to create GPG key for '$USER_ID'."
 
-list_secret_key "$USER_ID" &>/dev/null || die "Failed to create GPG key for '$USER_ID'."
-GPGKEY=$(list_secret_key "$USER_ID" | $GREP -E "^fpr" | $CUT -s -d ":" -f 10)
+list_secret_key &>/dev/null || die "Failed to create GPG key for '$USER_ID'."
+GPGKEY=$(list_secret_key | $GREP -E "^fpr" | $CUT -s -d ":" -f 10) || die_internal_error
 
-$ECHO "Importing Ubuntu's key..."
+$ECHO "Importing Ubuntu's key..." && \
 $GPG --keyid-format long --keyserver hkp://keyserver.ubuntu.com --receive-keys 2>&1 \
 "$UBUNTU_SIGNING_KEY" || \
 die "Failed to import Ubuntu's key."
 
-$ECHO "Signing Ubuntu's key..."
+$ECHO "Signing Ubuntu's key..." && \
 $GPG --batch --yes --default-key "$GPGKEY" --sign-key "$UBUNTU_SIGNING_KEY" 2>&1 || \
 die "Failed to sign Ubuntu's key."
 
-$ECHO "GPG was set up successfully."
+$ECHO "GPG was set up successfully." || die_internal_error

@@ -12,6 +12,10 @@ function die {
 	exit 1
 }
 
+function die_internal_error {
+	die "Internal error."
+}
+
 [ -x "$GIT" ] || die "Can't find Git."
 
 if [ -x "$BASH_PROFILE" ] ; then
@@ -29,20 +33,16 @@ die "Failed to connect to the remote repository."
 
 # Checking for command line parameters.
 if [ "$#" -ne 0 ] ; then
-	$ECHO "=== Adding files ==="
+	$ECHO "=== Adding files ===" || die_internal_error
 	for FILE in "$@" ; do
 		# Checking if FILE is a regular file.
-		if [ ! -f $FILE ] ; then
-			die "'$FILE' is not a regular file or it doesn't exist."
-		fi
+		[ -f "$FILE" ] || die "'$FILE' is not a regular file or it doesn't exist."
 		# Checking if FILE is readable.
-		if [ ! -r $FILE ] ; then
-			die "'$FILE' is not readable."
-		fi
+		[ -r "$FILE" ] || die "'$FILE' is not readable."
 		$GIT add "$FILE" || die "Failed adding file '$FILE'."
-		$ECHO "File '$FILE' added."
+		$ECHO "File '$FILE' added." || die_internal_error
 	done
-	$ECHO ""
+	$ECHO "" || die_internal_error
 fi
 
 # Committing staged files.

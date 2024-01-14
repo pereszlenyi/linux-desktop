@@ -94,7 +94,7 @@ NUMBER_OF_FILES=$($WC --lines <<<"$FILES") || die_internal_error
 	$ECHO -n "Date: " && \
 	$DATE "+%F %T %Z" && \
 	$ECHO "Checksum tool: '$SHA_SUM'" && \
-	$ECHO -e "\n=== Checksums ===" ;
+	$ECHO -e "\n=== Checksums ==="
 } >"$OUTPUT_FILE" || die_internal_error
 
 SECONDS=0

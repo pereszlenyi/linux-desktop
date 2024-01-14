@@ -27,8 +27,11 @@ die "You are not in a Git working directory."
 [ "$($GIT status --porcelain --untracked-files=no)" == "" ] || \
 die "There are modified files that are not committed."
 
+CURRENT_BRANCH="$($GIT branch --show-current)" || \
+die "Unable to get the name of the current branch."
+
 # Checking if we are merging the branch to itself.
-[ "$($GIT branch --show-current)" == "$1" ] && \
+[ "$CURRENT_BRANCH" == "$1" ] && \
 die "Source and target branches are the same."
 
 function git_pull {
@@ -44,7 +47,7 @@ git_pull && \
 $GIT switch --quiet "$1" && \
 git_pull && \
 $GIT switch --quiet - && \
-$ECHO -e "\n=== Merging branch '$1' into '$($GIT branch --show-current)' ===" && \
+$ECHO -e "\n=== Merging branch '$1' into '$CURRENT_BRANCH' ===" && \
 $GIT merge --gpg-sign --no-edit "$1" && \
 $ECHO -e "\n=== Git status ===" && \
 $GIT status

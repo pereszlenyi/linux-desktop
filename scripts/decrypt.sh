@@ -25,6 +25,10 @@ function die {
 	exit 1
 }
 
+function die_internal_error {
+	die "Internal error."
+}
+
 for FILE in "$DIRNAME" "$BASENAME" "$RM" "$MAKEPASSWD" "$PWDIR" \
 	"$MKDIR" "$SRM" "$TAR" "$REALPATH" "$ZIP" "$GPG" "$MV" "$LS" "$XARGS" "$HEAD" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
@@ -35,28 +39,29 @@ done
 
 # Checking if the input file is readable.
 [ -r "$1" ] || die "'$1' doesn't exist or it's not readable."
-INPUT_FILE="$($REALPATH $1)"
+INPUT_FILE="$($REALPATH $1)" || die_internal_error
 
 # Determining the name of the destination directory.
 DESTINATION_DIR="."
 if [ $# == 2 ] ; then
 	DESTINATION_DIR="$2"
 fi
-DESTINATION_DIR="$($REALPATH $DESTINATION_DIR)"
 
 # Checking if the destination directory is writable.
 [ -w "$DESTINATION_DIR" ] || die "'$DESTINATION_DIR' doesn't exist or it's not writable."
+
+DESTINATION_DIR="$($REALPATH $DESTINATION_DIR)" || die_internal_error
 
 cd "$DESTINATION_DIR" || \
 die "Unable to enter into '$DESTINATION_DIR'."
 
 # Determining the name of the temporary directory.
-HOME_DIR=$(/bin/bash -c "cd ; ${PWDIR}")
-TEMP_DIR="$HOME_DIR/encrypt_temp_$($MAKEPASSWD --chars 10)"
+HOME_DIR=$(/bin/bash -c "cd ; ${PWDIR}") || die_internal_error
+TEMP_DIR="$HOME_DIR/encrypt_temp_$($MAKEPASSWD --chars 10)" || die_internal_error
 [ -e "$TEMP_DIR" ] && die "Internal error: '$TEMP_DIR' exists."
 
 # Saving the default mask.
-DEFAULT_UMASK="$(umask -p)"
+DEFAULT_UMASK="$(umask -p)" || die_internal_error
 
 # Creating the temporary directory.
 umask u=rwx,g=,o= && \
@@ -66,7 +71,7 @@ die "Unable to create directory '$TEMP_DIR'."
 
 function delete_temp_dir {
 	$ECHO -n "Cleaning up... "
-	$SRM -rz "$TEMP_DIR"
+	$SRM -rz "$TEMP_DIR" && \
 	$ECHO "done."
 }
 
@@ -83,9 +88,10 @@ function get_filename_from_tar {
 }
 
 function ask_to_overwrite_destination {
-	OUTPUT_FILE="${DESTINATION_DIR}/$(get_filename_from_tar)"
-	if [ -e $OUTPUT_FILE ] ; then
-		YES_OR_NO="$($DIRNAME $0)/yes_or_no.sh"
+	OUTPUT_FILE="${DESTINATION_DIR}/$(get_filename_from_tar)" || \
+	die_with_cleanup "Aborting."
+	if [ -e "$OUTPUT_FILE" ] ; then
+		YES_OR_NO="$($DIRNAME $0)/yes_or_no.sh" || die_with_cleanup "Internal error."
 		[ -x "$YES_OR_NO" ] || die_with_cleanup "'$YES_OR_NO' doesn't exist or it's not executable."
 		$YES_OR_NO "Warning: '$OUTPUT_FILE' already exists. Do you want to overwrite it?" && \
 		$RM --recursive "$OUTPUT_FILE" || \

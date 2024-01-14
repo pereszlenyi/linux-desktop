@@ -28,6 +28,10 @@ function die {
 	exit 1
 }
 
+function die_internal_error {
+	die "Internal error."
+}
+
 for FILE in "$DIRNAME" "$BASENAME" "$TOUCH" "$RM" "$MAKEPASSWD" "$PWDIR" \
 	"$MKDIR" "$SRM" "$TAR" "$REALPATH" "$ZIP" "$WC" "$GPG" "$MV" "$LS" "$XARGS" ; do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
@@ -36,43 +40,46 @@ done
 # Checking for command-line parameters.
 [ $# == 1 ] || [ $# == 2 ] || die "Usage: $0 file_or_folder_to_encrypt [output_file_name]"
 
-# Checking if the input file or folder is readable.
+# Checking the input file or folder.
 [ -r "$1" ] || die "'$1' doesn't exist or it's not readable."
-INPUT_FILE="$($REALPATH $1)"
+[ -L "$1" ] && die "'$1' is a symbolic link."
+[ -f "$1" ] || [ -d "$1" ] || die "'$1' is not a directory nor a regular file."
+INPUT_FILE="$($REALPATH $1)" || die_internal_error
 
 # Determining the name of the output file.
 OUTPUT_FILE="$INPUT_FILE.encrypted"
 if [ $# == 2 ] ; then
 	OUTPUT_FILE="$2"
 fi
-OUTPUT_FILE="$($REALPATH $OUTPUT_FILE)"
+OUTPUT_FILE="$($REALPATH $OUTPUT_FILE)" || die_internal_error
 
 [ "$INPUT_FILE" == "$OUTPUT_FILE" ] && die "The input and output files are the same."
 
 # Confirming to overwrite the output file, if exists.
-if [ -e $OUTPUT_FILE ] ; then
-	YES_OR_NO="$($DIRNAME $0)/yes_or_no.sh"
+if [ -e "$OUTPUT_FILE" ] ; then
+	YES_OR_NO="$($DIRNAME $0)/yes_or_no.sh" || die_internal_error
 	[ -x "$YES_OR_NO" ] || die "'$YES_OR_NO' doesn't exist or it's not executable."
-	$YES_OR_NO "File '$OUTPUT_FILE' already exists. Do you want to replace it?" || \
+	$YES_OR_NO "'$OUTPUT_FILE' already exists. Do you want to replace it?" || \
 	die "Aborting."
 fi
 
-# Checking if the output file is readable.
+# Checking if the output file is writable.
 $TOUCH "$OUTPUT_FILE" && \
-$RM "$OUTPUT_FILE" || \
+$RM "$OUTPUT_FILE" && \
+[ ! -e "$OUTPUT_FILE" ] || \
 die "Unable to create file '$OUTPUT_FILE'."
 
 # Determining the name of the temporary directory.
-HOME_DIR=$(/bin/bash -c "cd ; ${PWDIR}")
-TEMP_DIR="$HOME_DIR/encrypt_temp_$($MAKEPASSWD --chars 10)"
+HOME_DIR=$(/bin/bash -c "cd ; ${PWDIR}") || die_internal_error
+TEMP_DIR="$HOME_DIR/encrypt_temp_$($MAKEPASSWD --chars 10)" || die_internal_error
 [ -e "$TEMP_DIR" ] && die "Internal error: '$TEMP_DIR' exists."
 
 # Saving the default mask.
-DEFAULT_UMASK="$(umask -p)"
+DEFAULT_UMASK="$(umask -p)" || die_internal_error
 
 # Creating the password.
-PASSWORD="$($MAKEPASSWD --chars $PASSWORD_LENGTH)"
-((PASSWORD_LENGTH++))
+PASSWORD="$($MAKEPASSWD --chars $PASSWORD_LENGTH)" || die_internal_error
+((PASSWORD_LENGTH++)) || die_internal_error
 [ $($WC --chars <<<$PASSWORD) -eq $PASSWORD_LENGTH ] || \
 die "Unable to create password."
 
@@ -83,7 +90,7 @@ die "Unable to create directory '$TEMP_DIR'."
 
 function delete_temp_dir {
 	$ECHO -n "Cleaning up... "
-	$SRM -rz "$TEMP_DIR"
+	$SRM -rz "$TEMP_DIR" && \
 	$ECHO "done."
 }
 
