@@ -155,6 +155,11 @@
           CONTAINERIZATION_TECHS: "{{ (INSTALL_CONTAINERIZATION_TECHS | default('false')) == 'true' }}"
           INSTALL_JAVA: "{{ (INSTALL_JAVA_TOOLS | default('false')) == 'true' }}"
 
+      - name: Exiting if FULLNAME or EMAIL are empty
+        ansible.builtin.fail:
+          msg: Required variables FULLNAME or EMAIL are empty.
+        when: (FULLNAME == "") or (EMAIL == "")
+
       - name: Determining the kubectl repository
         block:
           - name: Getting the latest kubectl version
