@@ -70,7 +70,7 @@ DIR_CONTENTS=$($FIND -P .) || \
 die "Failed to list the contents of '$INPUT_DIRECTORY'."
 
 function filter_files {
-	for LINE in $1 ; do
+	while IFS='' read -r LINE ; do
 		[ -L "$LINE" ] && die "'$LINE' is a symbolic link."
 		[ -r "$LINE" ] || die "'$LINE' is not readable."
 		if [ -d "$LINE" ] ; then
@@ -81,7 +81,7 @@ function filter_files {
 		else
 			die "'$LINE' is not a directory nor a regular file."
 		fi
-	done
+	done <<<"$1"
 }
 
 FILES=$(filter_files "$DIR_CONTENTS") || die "Aborting."
@@ -112,9 +112,11 @@ function show_progress {
 	die_internal_error
 }
 
+SORTED_FILES=$($SORT <<<"$FILES") || die_internal_error
+
 # Calculating hashes
 $CLEAR
-for FILE in $($SORT <<<"$FILES") ; do
+while IFS='' read -r FILE ; do
 	show_progress "$FILE"
 	SHA_OUTPUT=$($SHA_SUM "$FILE") || \
 	die "Failed to calculate the hash of '$FILE'."
@@ -122,7 +124,7 @@ for FILE in $($SORT <<<"$FILES") ; do
 	die "Failed to calculate the hash of '$FILE'."
 	$ECHO "${FILE:2}   $HASH" >>"$OUTPUT_FILE" || die_internal_error
 	(( FILES_DONE++ ))
-done
+done <<<"$SORTED_FILES"
 show_progress ""
 
 $ECHO "=== End of checksums ===" >>"$OUTPUT_FILE" || die_internal_error
