@@ -109,6 +109,10 @@
         - template: enchant_dictionary_en_US
           target_filename: en_US.dic
           target_directory: ~/.config/enchant
+        # htop
+        - template: htop_configuration
+          target_filename: htoprc
+          target_directory: ~/.config/htop
 
     tasks:
 
