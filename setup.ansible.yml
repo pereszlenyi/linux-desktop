@@ -297,6 +297,7 @@
             - bash-completion
             - sed
             - aptitude
+            - aptitude-doc-en
             - unattended-upgrades
             - update-notifier-common
             - distro-info
@@ -328,6 +329,9 @@
             - unzip
             - dialog
             - ncurses-bin
+            - plocate
+            - exa
+            - ripgrep
             # Fonts
             - fonts-noto
             - fonts-recommended
