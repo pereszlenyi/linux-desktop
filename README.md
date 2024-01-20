@@ -115,17 +115,25 @@ Below is a list of what the above steps do for your system.
 
 * Your Ubuntu APT and snap packages are updated to the latest version.
   In fact, you can use `run_install_script` later to update Ubuntu.
-* A bunch of software are installed, such as [Firefox](https://www.mozilla.org/en-US/firefox/new/), [Google Chrome](https://www.google.com/chrome/), [Geany](https://www.geany.org/), [Meld](https://meldmerge.org/), etc.
-  * If you select to install containerization technologies, then [Docker Engine](https://docs.docker.com/engine/install/ubuntu/), [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/), [Helm](https://helm.sh/), [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt) will also be installed.
-  * If you select that you want to develop in Java, then [IntelliJ IDEA Community Edition](https://www.jetbrains.com/idea/), [Azul JDK](https://www.azul.com/downloads/), and the latest version of [Maven](https://maven.apache.org/) will also be installed.
+* A bunch of software are installed, such as [Firefox](https://www.mozilla.org/en-US/firefox/new/), [Google Chrome](https://www.google.com/chrome/), [Geany], [Meld](https://meldmerge.org/), etc.
+  * If you select to install containerization technologies, then [Docker Engine](https://docs.docker.com/engine/install/ubuntu/), [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/), and [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt) will also be installed.
+  * If you select to install Java development tools, then [IntelliJ IDEA Community Edition](https://www.jetbrains.com/idea/) and [Azul JDK](https://www.azul.com/downloads/) will also be installed.
+* Unattended upgrades for all installed packages are configured.
 * The hostname is set in `/etc/wsl.conf` to show the Ubuntu release number.
 
 ### Changes for the User
 
-* An SSH key is created for [GitHub](https://github.com/) and also for signing Git commits.
-* The SSH client is configured and SSH key fingerprints of GitHub are added to `known_hosts`.
-* GPG is set up and Ubuntu's key is imported.
+* An SSH key is created for [GitHub], [GitLab], or [Bitbucket] and also for signing Git commits.
+* The SSH client is configured and SSH key fingerprints of [GitHub], [GitLab], and [Bitbucket] are added to [`known_hosts`](https://www.howtouselinux.com/post/ssh-known_hosts-file).
+* [GPG is set up and Ubuntu's key is imported.](scripts/setup_gpg.sh)
 * [Git is configured.](templates/bash_profile.sh.j2)
+* The Bash prompt is configured to show the exit status of the last command and the current Git branch, if we are in a Git repository.
 * Useful [aliases](templates/bash_profile.sh.j2) and [scripts](scripts) are provided.
-* Configurations are set for some of the installed applications, e.g., for Geany.
-* If you select to install containerization technologies, then it will be verified that the user can run Docker commands.
+* Configurations are set for some of the installed applications, e.g., for [Geany].
+* If you select to install containerization technologies, then [Helm](https://helm.sh/) will be installed locally and it will be verified that the user can run Docker commands.
+* If you select to install Java development tools, then [Maven](https://maven.apache.org/) will also be installed locally.
+
+[Geany]: https://www.geany.org/
+[GitHub]: https://github.com/
+[GitLab]: https://about.gitlab.com/
+[Bitbucket]: https://bitbucket.org/product
