@@ -3,7 +3,7 @@
     hosts: localhost
     connection: local
     vars:
-      MINIMUM_UBUNTU_VERSION: "20.04"
+      MINIMUM_UBUNTU_VERSION: "22.04"
       ARCHITECTURE_ALIAS:
         x86_64: amd64
       REQUIRED_PPAS:
@@ -149,6 +149,7 @@
           HOSTNAME: "{{ (ansible_facts['distribution'] + '-' + ansible_facts['distribution_version']) | replace('.', '-') }}"
           CURRENT_DIRECTORY: "{{ ansible_facts['env']['PWD'] }}"
           USERNAME: "{{ ansible_facts['user_id'] }}"
+          LINUX_FULLNAME: "{{ (ansible_facts['user_gecos'] | split(','))[0] }}"
           FULLNAME: "{{ FULLNAME | trim }}"
           EMAIL: "{{ EMAIL | trim }}"
           SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
@@ -571,7 +572,7 @@
         ansible.builtin.command:
           cmd: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ USERNAME }}
         ignore_errors: yes
-        when: FULLNAME != (ansible_facts['user_gecos'] | split(','))[0]
+        when: FULLNAME != LINUX_FULLNAME
 
     handlers:
       - name: Touching /var/run/reboot-required

@@ -2,7 +2,7 @@
   - name: Getting the filename for package information
     ansible.builtin.set_fact:
       PACKAGE_INFO_FILENAME: >-
-        {{ "/var/lib/apt/lists/ppa.launchpad.net_" +
+        {{ "/var/lib/apt/lists/ppa.launchpadcontent.net_" +
         (item | replace('/', '_')) +
         "_ubuntu_dists_" + UBUNTU_CODENAME + "_InRelease" }}
 
