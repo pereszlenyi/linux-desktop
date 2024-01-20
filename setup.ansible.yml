@@ -152,6 +152,7 @@
           LINUX_FULLNAME: "{{ (ansible_facts['user_gecos'] | split(','))[0] }}"
           FULLNAME: "{{ FULLNAME | trim }}"
           EMAIL: "{{ EMAIL | trim }}"
+          DEFAULT_BROWSER: google-chrome
           SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
           CONTAINERIZATION_TECHS: "{{ (INSTALL_CONTAINERIZATION_TECHS | default('false')) == 'true' }}"
           INSTALL_JAVA: "{{ (INSTALL_JAVA_TOOLS | default('false')) == 'true' }}"
@@ -873,6 +874,19 @@
           name: '{{ PYTHON_PACKAGES }}'
           state: latest
           executable: ~/.local/bin/pip3
+
+      - name: Checking the current default web browser
+        ansible.builtin.command:
+          cmd: /usr/bin/xdg-settings check default-web-browser "{{ DEFAULT_BROWSER }}.desktop"
+        register: CURRENT_DEFAULT_BROWSER
+        changed_when: false
+        tags: browser
+
+      - name: Setting the default web browser
+        ansible.builtin.command:
+          cmd: /usr/bin/xdg-settings set default-web-browser "{{ DEFAULT_BROWSER }}.desktop"
+        when: CURRENT_DEFAULT_BROWSER['stdout'] != "yes"
+        tags: browser
 
       - name: Verifying that the user can run docker commands
         block:
