@@ -117,6 +117,9 @@
         - template: mc_configuration
           target_filename: ini
           target_directory: ~/.config/mc
+        - template: mc_panels_configuration
+          target_filename: panels.ini
+          target_directory: ~/.config/mc
 
     tasks:
 
