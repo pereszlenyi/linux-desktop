@@ -113,6 +113,10 @@
         - template: htop_configuration
           target_filename: htoprc
           target_directory: ~/.config/htop
+        # GNU Midnight Commander
+        - template: mc_configuration
+          target_filename: ini
+          target_directory: ~/.config/mc
 
     tasks:
 
