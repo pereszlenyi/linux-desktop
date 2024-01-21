@@ -29,6 +29,10 @@ do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
+# Setting the user file-creation mask.
+umask u=rwx,g=rx,o=rx || \
+die "Unable to set the file-creation mask."
+
 FILENAME=$($BASENAME "$0") || die_internal_error
 [ $# == 0 ] || die "$FILENAME doesn't accept any parameters."
 
