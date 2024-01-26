@@ -30,6 +30,11 @@ do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
+# We make sure that the language for the installation is English.
+export LANG="en_US.UTF-8"
+export LANGUAGE="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+
 # Setting the user file-creation mask.
 umask u=rwx,g=rx,o=rx || \
 die "Unable to set the file-creation mask."
