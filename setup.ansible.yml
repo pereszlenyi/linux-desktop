@@ -105,6 +105,9 @@
         - template: geany.filetypes.GitRebase.conf
           target_filename: filetypes.GitRebase.conf
           target_directory: ~/.config/geany/filedefs
+        - template: geany.filetypes.python
+          target_filename: filetypes.python
+          target_directory: ~/.config/geany/filedefs
         - template: geany.filetype_extensions.conf
           target_filename: filetype_extensions.conf
           target_directory: ~/.config/geany
