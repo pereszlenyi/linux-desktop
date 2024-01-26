@@ -127,6 +127,10 @@
         - template: visual_studio_code_settings
           target_filename: settings.json
           target_directory: ~/.config/Code/User
+        # Fontconfig
+        - template: fonts.conf
+          target_filename: fonts.conf
+          target_directory: ~/.config/fontconfig
       REQUIRED_VS_CODE_EXTENSIONS:
         - redhat.ansible
         - redhat.vscode-xml

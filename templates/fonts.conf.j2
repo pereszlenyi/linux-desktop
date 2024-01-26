@@ -1,0 +1,36 @@
+<?xml version='1.0'?>
+<!DOCTYPE fontconfig SYSTEM '/usr/share/xml/fontconfig/fonts.dtd'>
+<fontconfig>
+    <match target="font">
+        <edit name="rgba" mode="assign">
+            <const>rgb</const>
+        </edit>
+    </match>
+    <match target="font">
+        <edit name="hinting" mode="assign">
+            <bool>true</bool>
+        </edit>
+    </match>
+    <match target="font">
+        <edit name="hintstyle" mode="assign">
+            <const>hintmedium</const>
+        </edit>
+    </match>
+    <match target="font">
+        <edit name="antialias" mode="assign">
+            <bool>true</bool>
+        </edit>
+    </match>
+{% for font in ['Cascadia Mono', 'Cascadia Code'] %}
+    <alias>
+        <family>My {{ font }}</family>
+        <prefer>
+            <family>{{ font }}</family>
+            <family>DejaVu Sans Mono</family>
+        </prefer>
+        <default>
+            <family>monospace</family>
+        </default>
+    </alias>
+{% endfor %}
+</fontconfig>
