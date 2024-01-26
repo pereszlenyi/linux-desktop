@@ -13,15 +13,17 @@
         - ansible/ansible
       REQUIRED_APT_KEYRINGS:
         - google-chrome
+        - microsoft
       JAVA_APT_KEYRINGS:
         - azul
       CONTAINERIZATION_APT_KEYRINGS:
         - docker
-        - microsoft
         - kubernetes-apt-keyring
       REQUIRED_REPOSITORIES:
         - filename: google-chrome
           repository: deb [arch={{ ARCHITECTURE }}] https://dl.google.com/linux/chrome/deb/ stable main
+        - filename: vscode
+          repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
       JAVA_REPOSITORIES:
         - filename: zulu
           repository: deb [signed-by=/etc/apt/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main
@@ -32,6 +34,7 @@
           repository: deb [arch={{ ARCHITECTURE }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ UBUNTU_CODENAME }} main
       REQUIRED_PACKAGES:
         - google-chrome-stable
+        - code
       JAVA_PACKAGES:
         - default-jdk
         - default-jdk-doc
@@ -120,6 +123,19 @@
         - template: mc_panels_configuration
           target_filename: panels.ini
           target_directory: ~/.config/mc
+        # Visual Studio Code
+        - template: visual_studio_code_settings
+          target_filename: settings.json
+          target_directory: ~/.config/Code/User
+      REQUIRED_VS_CODE_EXTENSIONS:
+        - redhat.ansible
+        - redhat.vscode-xml
+        - redhat.vscode-yaml
+        - eamodio.gitlens
+      JAVA_VS_CODE_EXTENSIONS:
+        - vscjava.vscode-java-pack
+      CONTAINERIZATION_VS_CODE_EXTENSIONS:
+        - ms-azuretools.vscode-docker
 
     tasks:
 
@@ -276,6 +292,10 @@
             {{ REQUIRED_PYTHON_PACKAGES +
             (CONTAINERIZATION_PYTHON_PACKAGES if CONTAINERIZATION_TECHS else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
+          VS_CODE_EXTENSIONS: >-
+            {{ REQUIRED_VS_CODE_EXTENSIONS +
+            (JAVA_VS_CODE_EXTENSIONS if INSTALL_JAVA else []) +
+            (CONTAINERIZATION_VS_CODE_EXTENSIONS if CONTAINERIZATION_TECHS else []) }}
 
   - name: Systemwide changes
     hosts: localhost
@@ -880,6 +900,20 @@
           name: '{{ PYTHON_PACKAGES }}'
           state: latest
           executable: ~/.local/bin/pip3
+
+      - name: Getting the list of Visual Studio Code extensions
+        ansible.builtin.command:
+          cmd: /usr/bin/code --list-extensions
+        register: CURRENT_VS_CODE_EXTENSIONS
+        changed_when: false
+        tags: Visual Studio Code
+
+      - name: Installing Visual Studio Code extensions
+        ansible.builtin.command:
+          cmd: /usr/bin/code --install-extension "{{ item }}" --force
+        when: item not in CURRENT_VS_CODE_EXTENSIONS['stdout_lines']
+        loop: '{{ VS_CODE_EXTENSIONS }}'
+        tags: Visual Studio Code
 
       - name: Checking the current default web browser
         ansible.builtin.command:
