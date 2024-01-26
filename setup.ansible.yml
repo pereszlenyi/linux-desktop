@@ -152,6 +152,12 @@
       - name: Populating service facts
         ansible.builtin.service_facts:
 
+      - name: Exiting if systemd is not running
+        ansible.builtin.fail:
+          msg: It seems that the computer was not started with systemd.
+        when: >-
+            'systemd-logind.service' not in ansible_facts['services']
+
       - name: Setting system variables
         ansible.builtin.set_fact:
           ARCHITECTURE: "{{ ARCHITECTURE_ALIAS[ansible_facts['architecture']] }}"
@@ -164,7 +170,6 @@
           FULLNAME: "{{ FULLNAME | trim }}"
           EMAIL: "{{ EMAIL | trim }}"
           DEFAULT_BROWSER: google-chrome
-          SYSTEMD_IS_RUNNING: "{{ 'systemd-logind.service' in ansible_facts['services'] }}"
           CONTAINERIZATION_TECHS: "{{ (INSTALL_CONTAINERIZATION_TECHS | default('false')) == 'true' }}"
           INSTALL_JAVA: "{{ (INSTALL_JAVA_TOOLS | default('false')) == 'true' }}"
 
@@ -421,7 +426,6 @@
         ansible.builtin.apt:
           name: '{{ UNWANTED_APT_PACKAGES }}'
           state: absent
-        when: SYSTEMD_IS_RUNNING
 
       - name: Cleaning the local apt cache
         ansible.builtin.apt:
@@ -448,7 +452,6 @@
           state: started
           enabled: yes
         loop: '{{ SYSTEMD_SERVICES }}'
-        when: SYSTEMD_IS_RUNNING
 
       - name: Updating existing snaps
         block:
@@ -464,14 +467,12 @@
               cmd: /usr/bin/snap refresh
             tags: snap
             when: SNAPS_TO_UPDATE['stdout_lines'] | length >= 2
-        when: SYSTEMD_IS_RUNNING
 
       - name: Installing snaps
         community.general.snap:
           name: '{{ item }}'
         loop: '{{ SNAPS }}'
         tags: snap
-        when: SYSTEMD_IS_RUNNING
 
       - name: Installing classic snaps
         community.general.snap:
@@ -479,7 +480,6 @@
           classic: true
         loop: '{{ CLASSIC_SNAPS }}'
         tags: snap
-        when: SYSTEMD_IS_RUNNING
 
       - name: Removing unwanted snaps
         community.general.snap:
@@ -487,7 +487,6 @@
           state: absent
         loop: '{{ UNWANTED_SNAPS }}'
         tags: snap
-        when: SYSTEMD_IS_RUNNING
 
       - name: Checking the Allowed-Origins line in 50unattended-upgrades
         ansible.builtin.command:
@@ -575,14 +574,6 @@
           - unattended-upgrades configuration changed
         loop: '{{ UNATTENDED_UPGRADES_OPTION_LINES }}'
         tags: unattended-upgrades
-
-      - name: Creating /etc/wsl.conf from template wsl.conf.j2
-        ansible.builtin.template:
-          src: ./templates/wsl.conf.j2
-          dest: /etc/wsl.conf
-          mode: u=rw,g=r,o=r
-        notify: reboot required
-        tags: wsl.conf
 
       - name: Setting the full name in /etc/passwd
         ansible.builtin.command:
@@ -921,7 +912,6 @@
             when: DOCKER_IMAGE_OUTPUT['images'] | length == 0
         when:
           - CONTAINERIZATION_TECHS
-          - SYSTEMD_IS_RUNNING
           - ADD_USER_TO_DOCKER_OUTPUT is defined
           - not ADD_USER_TO_DOCKER_OUTPUT['changed']
           - not REBOOT_REQUIRED
@@ -1017,19 +1007,11 @@
         changed_when: false
         tags: distro-info
 
-      - name: Printing message about systemd
-        ansible.builtin.debug:
-          msg: >-
-            It seems that Ubuntu was not started with systemd.
-            This means that some tasks were skipped.
-            Run 'run_install_script' after restarting WSL.
-        when: not SYSTEMD_IS_RUNNING
-
       - name: Printing message about Docker
         ansible.builtin.debug:
           msg: >-
             Docker was installed. In order to verify that the user can run docker commands,
-            run 'run_install_script' after restarting WSL.
+            run 'run_install_script' after restarting your computer.
         when:
           - ADD_USER_TO_DOCKER_OUTPUT is defined
           - ADD_USER_TO_DOCKER_OUTPUT['changed']

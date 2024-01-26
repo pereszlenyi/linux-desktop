@@ -14,6 +14,7 @@ ADD_APT_REPO=/usr/bin/add-apt-repository
 ANSIBLE=/usr/bin/ansible-playbook
 DIALOG=/usr/bin/dialog
 CLEAR=/usr/bin/clear
+REBOOT=/usr/sbin/reboot
 
 function die {
 	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
@@ -73,7 +74,6 @@ fi
 
 INSTALL_COMMAND="$ECHO \"=== Installing Ansible ===\" && \
 	$APTGET update && \
-	$APTGET --assume-yes --fix-broken install && \
 	$APTGET --assume-yes dist-upgrade && \
 	$ADD_APT_REPO --yes --update ppa:ansible/ansible && \
 	$APTGET --assume-yes install ansible aptitude dialog ncurses-bin && \
@@ -148,15 +148,13 @@ $ANSIBLE_COMMAND \
 	INSTALL_CONTAINERIZATION_TECHS=\"$INSTALL_CONTAINERIZATION_TECHS\"" \
 	./setup.ansible.yml && \
 $ECHO "=== Install was SUCCESSFUL ===" || \
-die "Failed to run Ansible playbook. You can try shutting down and restarting WSL (by \"wsl.exe --shutdown\") then running $FILENAME again."
+die "Failed to run Ansible playbook.\nYou can try restarting your computer then running $FILENAME again."
 
 if [ -e /var/run/reboot-required ] ; then
 	$ECHO "" && \
-	$ECHO "You have to shut down and restart WSL for the changes to take effect." && \
+	$ECHO "You have to restart your computer for the changes to take effect." && \
 	$ECHO "After restarting, you can run this install script again by executing 'run_install_script'." && \
-	if ./scripts/yes_or_no.sh "Do you want to shut down WSL now?" ; then
-		wsl.exe --shutdown
-	else
-		$ECHO "To shut down WSL later, execute \"wsl.exe --shutdown\"."
+	if has_sudo_rights && ./scripts/yes_or_no.sh "Do you want to restart now?" ; then
+		$REBOOT
 	fi
 fi
