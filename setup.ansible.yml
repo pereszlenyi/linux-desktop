@@ -71,6 +71,8 @@
         - containerd.service
       REQUIRED_SNAPS:
         - firefox
+        - skype
+        - kommit
       JAVA_CLASSIC_SNAPS:
         - intellij-idea-community
       CONTAINERIZATION_CLASSIC_SNAPS: []
@@ -139,6 +141,7 @@
         - redhat.vscode-xml
         - redhat.vscode-yaml
         - eamodio.gitlens
+        - streetsidesoftware.code-spell-checker
       JAVA_VS_CODE_EXTENSIONS:
         - vscjava.vscode-java-pack
       CONTAINERIZATION_VS_CODE_EXTENSIONS:
@@ -376,6 +379,7 @@
             - plocate
             - exa
             - ripgrep
+            - duf
             # Fonts
             - fonts-noto
             - fonts-recommended
@@ -391,16 +395,65 @@
             - fonts-monoid-tight
             - fonts-liberation
             - fonts-inconsolata
+            - fonts-ancient-scripts
+            - fonts-powerline
+            - fonts-oxygen
+            # Themes
+            - adapta-kde
+            - adapta-gtk-theme
+            - papirus-icon-theme
+            - deepin-icon-theme
+            - qt5-style-kvantum
+            - qt5-style-kvantum-l10n
+            - qt5-style-kvantum-themes
+            - materia-kde
+            - materia-gtk-theme
+            - adwaita-icon-theme-full
+            - breathe-icon-theme
+            - breeze
+            - grub-theme-breeze
+            - sddm-theme-breeze
+            - plasma-theme-oxygen
+            - oxygen-cursor-theme
+            - oxygen-cursor-theme-extra
+            - oxygen-icon-theme
+            - oxygen-molecule
+            - gtk2-engines-oxygen
+            - kde-style-qtcurve-qt5
+            - gtk2-engines-qtcurve
+            - phinger-cursor-theme
             # GUI applications
             - xdg-utils
             - gitk
             - git-gui
             - geany
             - geany-plugins
-            - adwaita-icon-theme-full
             - meld
             - gpa
             - font-manager
+            - synaptic
+            - baobab
+            - gnome-disk-utility
+            # KDE
+            - kubuntu-desktop
+            - kde-standard
+            - kubuntu-docs
+            - kubuntu-notification-helper
+            - dolphin-plugins
+            - kwin-addons
+            - kdeutils
+            - kdeadmin
+            - plasma-browser-integration
+            - plasma-workspace-wallpapers
+            - kcolorchooser
+            - colord-kde
+            - kcharselect
+            - kdocker
+            - kmix
+            - kompare
+            - kshutdown
+            - marble
+            - plasma-marble
           state: latest
         tags: install
 
