@@ -348,6 +348,7 @@
             - git
             - gitsome
             - openssh-client
+            - psmisc
             - joe
             - bat
             - mc
@@ -609,11 +610,14 @@
         when: FULLNAME != LINUX_FULLNAME
 
     handlers:
-      - name: Touching /var/run/reboot-required
+      - name: Touching files to indicate that a reboot is required
         ansible.builtin.file:
-          path: /var/run/reboot-required
+          path: '{{ item }}'
           state: touch
           mode: u=rw,g=r,o=r
+        loop:
+          - /var/run/reboot-required
+          - /var/lib/update-notifier/dpkg-run-stamp
         listen: reboot required
 
       - name: Running unattended-upgrades
@@ -648,8 +652,20 @@
         - commit: 31e6ee9bc825e16d3b48c0b30e20c763480da0c4
           filename: ubuntu.conf
           checksum: 548ebab2e3615b78f04f91b5a50b208540a91df26304a5c22b802fb31ff1b9bf6c3cbcf18e81c7ce4a67337bd9702ea5b09f033a34b1f4ee2d9eba49e07fc942
+      SUCCESSFUL_INSTALL_MARKER_FILE: >-
+        ~/.applications_were_automatically_configured.txt
 
     tasks:
+
+      - name: Getting the status of the successful install marker file
+        ansible.builtin.stat:
+          path: "{{ SUCCESSFUL_INSTALL_MARKER_FILE }}"
+        register: STATUS_OF_SUCCESSFUL_INSTALL_MARKER
+
+      - name: Setting variable OVERWRITE_CONFIGURATIONS
+        ansible.builtin.set_fact:
+          OVERWRITE_CONFIGURATIONS: >-
+            {{ not STATUS_OF_SUCCESSFUL_INSTALL_MARKER['stat']['exists'] }}
 
       - name: Getting the status of /var/run/reboot-required
         ansible.builtin.stat:
@@ -831,6 +847,7 @@
           path: ~/.config/geany/colorschemes
           state: directory
           mode: u=rwx,g=,o=
+        when: OVERWRITE_CONFIGURATIONS
         tags: Geany
 
       - name: Downloading Geany themes
@@ -840,6 +857,7 @@
           mode: u=rw,g=,o=
           checksum: sha512:{{ item['checksum'] }}
         loop: '{{ GEANY_THEMES }}'
+        when: OVERWRITE_CONFIGURATIONS
         tags: Geany
 
       - name: Copying Geany theme pygments.conf to pygments_customized.conf
@@ -849,6 +867,7 @@
           mode: u=rw,g=,o=
           force: no
           remote_src: yes
+        when: OVERWRITE_CONFIGURATIONS
         tags: Geany
 
       - name: Customizing Geany theme
@@ -873,6 +892,7 @@
             line: attribute=#0022aa;;true
           - regexp: "^attribute_unknown="
             line: attribute_unknown=#0022aa
+        when: OVERWRITE_CONFIGURATIONS
         tags: Geany
 
       - name: Creating directories for configuration files
@@ -881,14 +901,15 @@
           state: directory
           mode: u=rwx,g=,o=
         loop: '{{ CONFIGURATION_FILES }}'
+        when: OVERWRITE_CONFIGURATIONS
 
       - name: Creating configuration files from templates
         ansible.builtin.template:
           src: ./templates/{{ item['template'] }}.j2
           dest: "{{ item['target_directory'] }}/{{ item['target_filename'] }}"
           mode: u=rw,g=,o=
-          force: no
         loop: '{{ CONFIGURATION_FILES }}'
+        when: OVERWRITE_CONFIGURATIONS
 
       - name: Getting the status of ~/.local/bin/pip3
         ansible.builtin.stat:
@@ -1047,6 +1068,12 @@
         register: SUPPORTED_UBUNTU_VERSIONS
         changed_when: false
         tags: distro-info
+
+      - name: Creating file that marks the successful installation
+        ansible.builtin.template:
+          src: ./templates/successful_install_marker.j2
+          dest: "{{ SUCCESSFUL_INSTALL_MARKER_FILE }}"
+          mode: u=rw,g=,o=
 
       - name: Printing message about Docker
         ansible.builtin.debug:

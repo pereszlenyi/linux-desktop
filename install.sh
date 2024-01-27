@@ -15,6 +15,8 @@ ANSIBLE=/usr/bin/ansible-playbook
 DIALOG=/usr/bin/dialog
 CLEAR=/usr/bin/clear
 REBOOT=/usr/sbin/reboot
+KILLALL=/usr/bin/killall
+WHOAMI=/usr/bin/whoami
 
 function die {
 	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
@@ -59,6 +61,10 @@ done
 for FILE in yes_or_no.sh setup_gpg.sh ; do
 	[ -x "./scripts/$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
+
+# Checking if there was a successful installation before.
+[ -e ~/.applications_were_automatically_configured.txt ]
+MARKER_FILE_EXISTS=$?
 
 $ECHO "=== Setting up your Linux system ===" && \
 $ECHO "" || die_internal_error
@@ -159,7 +165,19 @@ if [ -e /var/run/reboot-required ] ; then
 	$ECHO "" && \
 	$ECHO "You have to restart your computer for the changes to take effect." && \
 	$ECHO "After restarting, you can run this install script again by executing 'run_install_script'." && \
-	if has_sudo_rights && ./scripts/yes_or_no.sh "Do you want to restart now?" ; then
-		$REBOOT
+	if [ -x "$REBOOT" ] && has_sudo_rights && \
+		./scripts/yes_or_no.sh "Do you want to restart now?"
+	then
+		$REBOOT && exit 0
+	fi
+fi
+
+if [ $MARKER_FILE_EXISTS -ne 0 ] ; then
+	$ECHO "" && \
+	$ECHO "You have to sign out for the configuration changes to take effect." && \
+	if [ -x "$KILLALL" ] && [ -x "$WHOAMI" ] && \
+		./scripts/yes_or_no.sh "Do you want to kill all running programs and sign out now?"
+	then
+		$KILLALL --user "$($WHOAMI)"
 	fi
 fi
