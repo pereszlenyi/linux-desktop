@@ -136,6 +136,10 @@
         - template: fonts.conf
           target_filename: fonts.conf
           target_directory: ~/.config/fontconfig
+        # KDE Plasma
+        - template: plasma_klaunchrc
+          target_filename: klaunchrc
+          target_directory: ~/.config
         # Konsole
         - template: konsole_color_scheme
           target_filename: My Color Scheme.colorscheme
@@ -146,6 +150,61 @@
         - template: konsole_settings
           target_filename: konsolerc
           target_directory: ~/.config
+      REQUIRED_KDE_SETTINGS:
+        - path: ~/.config/kdeglobals
+          values:
+            - group: General
+              key: font
+              value: Noto Sans,12,-1,5,50,0,0,0,0,0
+            - group: General
+              key: fixed
+              value: DejaVu Sans Mono,13,-1,5,50,0,0,0,0,0
+            - group: General
+              key: smallestReadableFont
+              value: Noto Sans,10,-1,5,50,0,0,0,0,0
+            - group: General
+              key: toolBarFont
+              value: Noto Sans,11,-1,5,50,0,0,0,0,0
+            - group: General
+              key: menuFont
+              value: Noto Sans,11,-1,5,50,0,0,0,0,0
+            - group: WM
+              key: activeFont
+              value: Noto Sans,11,-1,5,50,0,0,0,0,0
+        - path: ~/.kde/share/config/kdeglobals
+          values:
+            - group: General
+              key: font
+              value: Noto Sans,12,-1,5,50,0,0,0,0,0
+            - group: General
+              key: smallestReadableFont
+              value: Noto Sans,10,-1,5,50,0,0,0,0,0
+            - group: General
+              key: toolBarFont
+              value: Noto Sans,11,-1,5,50,0,0,0,0,0
+            - group: General
+              key: menuFont
+              value: Noto Sans,11,-1,5,50,0,0,0,0,0
+      DARK_KDE_SETTINGS:
+        - path: ~/.config/kdeglobals
+          values:
+            - group: KDE
+              key: widgetStyle
+              value: '{{ PLASMA_APPLICATION_STYLE }}'
+        - path: ~/.kde/share/config/kdeglobals
+          values:
+            - group: General
+              key: widgetStyle
+              value: '{{ PLASMA_APPLICATION_STYLE }}'
+        - path: ~/.config/kwinrc
+          values:
+            - group: org.kde.kdecoration2
+              key: library
+              value: org.kde.breeze
+            - group: org.kde.kdecoration2
+              key: theme
+              value: Breeze
+
       REQUIRED_VS_CODE_EXTENSIONS:
         - redhat.ansible
         - redhat.vscode-xml
@@ -286,6 +345,8 @@
           PLASMA_THEME: Materia-Color
           PLASMA_COLOR_SCHEME: KvantumAlt
           PLASMA_MOUSE_CURSOR_THEME: oxy-desert
+          PLASMA_ICON_THEME: Papirus-Dark
+          PLASMA_APPLICATION_STYLE: Oxygen
 
       - name: Setting playbook variables
         ansible.builtin.set_fact:
@@ -321,6 +382,9 @@
             {{ REQUIRED_PYTHON_PACKAGES +
             (CONTAINERIZATION_PYTHON_PACKAGES if CONTAINERIZATION_TECHS else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
+          KDE_SETTINGS: >-
+            {{ REQUIRED_KDE_SETTINGS +
+            (DARK_KDE_SETTINGS if SET_DARK_THEME else []) }}
           VS_CODE_EXTENSIONS: >-
             {{ REQUIRED_VS_CODE_EXTENSIONS +
             (JAVA_VS_CODE_EXTENSIONS if INSTALL_JAVA else []) +
@@ -1034,6 +1098,10 @@
             ansible.builtin.command:
               cmd: /usr/bin/plasma-apply-cursortheme "{{ PLASMA_MOUSE_CURSOR_THEME }}"
 
+          - name: Setting the Plasma icon theme
+            ansible.builtin.command:
+              cmd: /usr/lib/x86_64-linux-gnu/libexec/plasma-changeicons "{{ PLASMA_ICON_THEME }}"
+
       - name: Creating directories for configuration files
         ansible.builtin.file:
           path: "{{ item['target_directory'] }}"
@@ -1094,6 +1162,15 @@
           cmd: /usr/bin/xdg-settings set default-web-browser "{{ DEFAULT_BROWSER }}.desktop"
         when: CURRENT_DEFAULT_BROWSER['stdout'] != "yes"
         tags: browser
+
+      - name: Modifying KDE configuration files
+        community.general.kdeconfig:
+          path: "{{ item['path'] }}"
+          values: "{{ item['values'] }}"
+          mode: u=rw,g=,o=
+        loop: '{{ KDE_SETTINGS }}'
+        when: OVERWRITE_CONFIGURATIONS
+        tags: KDE
 
       - name: Verifying that the user can run docker commands
         block:
