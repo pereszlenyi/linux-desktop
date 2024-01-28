@@ -136,6 +136,16 @@
         - template: fonts.conf
           target_filename: fonts.conf
           target_directory: ~/.config/fontconfig
+        # Konsole
+        - template: konsole_color_scheme
+          target_filename: My Color Scheme.colorscheme
+          target_directory: ~/.local/share/konsole
+        - template: konsole_profile
+          target_filename: My Profile.profile
+          target_directory: ~/.local/share/konsole
+        - template: konsole_settings
+          target_filename: konsolerc
+          target_directory: ~/.config
       REQUIRED_VS_CODE_EXTENSIONS:
         - redhat.ansible
         - redhat.vscode-xml
@@ -198,6 +208,7 @@
           DEFAULT_BROWSER: google-chrome
           CONTAINERIZATION_TECHS: "{{ (INSTALL_CONTAINERIZATION_TECHS | default('false')) == 'true' }}"
           INSTALL_JAVA: "{{ (INSTALL_JAVA_TOOLS | default('false')) == 'true' }}"
+          SET_DARK_THEME: "{{ (CONFIGURE_DARK_THEME | default('false')) == 'true' }}"
 
       - name: Exiting if FULLNAME or EMAIL are empty
         ansible.builtin.fail:
@@ -267,6 +278,14 @@
             - search_string: >-
                 Unattended-Upgrade::Verbose
               line: "Unattended-Upgrade::Verbose \"true\";"
+
+      - name: Setting variables for KDE
+        tags: KDE
+        ansible.builtin.set_fact:
+          PLASMA_GLOBAL_THEME: com.github.varlesh.materia-dark
+          PLASMA_THEME: Materia-Color
+          PLASMA_COLOR_SCHEME: KvantumAlt
+          PLASMA_MOUSE_CURSOR_THEME: oxy-desert
 
       - name: Setting playbook variables
         ansible.builtin.set_fact:
@@ -947,6 +966,73 @@
             line: attribute_unknown=#0022aa
         when: OVERWRITE_CONFIGURATIONS
         tags: Geany
+
+      - name: Configuring the theme of the Plasma desktop
+        when:
+          - SET_DARK_THEME
+          - OVERWRITE_CONFIGURATIONS
+        tags: KDE
+        block:
+          - name: Verifying that the global Plasma theme is installed
+            ansible.builtin.command:
+              cmd: /usr/bin/plasma-apply-lookandfeel --list
+            register: PLASMA_GLOBAL_THEMES_LIST
+            changed_when: false
+            failed_when: >-
+              (PLASMA_GLOBAL_THEMES_LIST is failed) or
+              (PLASMA_GLOBAL_THEME not in PLASMA_GLOBAL_THEMES_LIST['stdout_lines'])
+
+          - name: Verifying that the Plasma theme is installed
+            ansible.builtin.shell:
+              cmd: >
+                /usr/bin/plasma-apply-desktoptheme --list-themes |
+                /usr/bin/grep --fixed-strings "{{ PLASMA_THEME }}"
+              executable: /bin/bash
+            changed_when: false
+            register: CURRENT_PLASMA_THEME
+            failed_when: >-
+              (CURRENT_PLASMA_THEME is failed) or
+              (CURRENT_PLASMA_THEME['stdout_lines'] | length == 0)
+
+          - name: Verifying that the Plasma color scheme is installed
+            ansible.builtin.shell:
+              cmd: >
+                /usr/bin/plasma-apply-colorscheme --list-schemes |
+                /usr/bin/grep --fixed-strings "{{ PLASMA_COLOR_SCHEME }}"
+              executable: /bin/bash
+            changed_when: false
+            register: CURRENT_PLASMA_COLOR_SCHEME
+            failed_when: >-
+              (CURRENT_PLASMA_COLOR_SCHEME is failed) or
+              (CURRENT_PLASMA_COLOR_SCHEME['stdout_lines'] | length == 0)
+
+          - name: Verifying that the Plasma mouse cursor theme is installed
+            ansible.builtin.shell:
+              cmd: >
+                /usr/bin/plasma-apply-cursortheme --list-themes |
+                /usr/bin/grep --fixed-strings "{{ PLASMA_MOUSE_CURSOR_THEME }}"
+              executable: /bin/bash
+            changed_when: false
+            register: CURRENT_PLASMA_MOUSE_CURSOR_THEME
+            failed_when: >-
+              (CURRENT_PLASMA_MOUSE_CURSOR_THEME is failed) or
+              (CURRENT_PLASMA_MOUSE_CURSOR_THEME['stdout_lines'] | length == 0)
+
+          - name: Setting the global Plasma theme
+            ansible.builtin.command:
+              cmd: /usr/bin/plasma-apply-lookandfeel --apply "{{ PLASMA_GLOBAL_THEME }}"
+
+          - name: Setting the Plasma theme
+            ansible.builtin.command:
+              cmd: /usr/bin/plasma-apply-desktoptheme "{{ PLASMA_THEME }}"
+
+          - name: Setting the Plasma color scheme
+            ansible.builtin.command:
+              cmd: /usr/bin/plasma-apply-colorscheme "{{ PLASMA_COLOR_SCHEME }}"
+
+          - name: Setting the Plasma mouse cursor theme
+            ansible.builtin.command:
+              cmd: /usr/bin/plasma-apply-cursortheme "{{ PLASMA_MOUSE_CURSOR_THEME }}"
 
       - name: Creating directories for configuration files
         ansible.builtin.file:
