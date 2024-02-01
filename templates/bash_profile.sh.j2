@@ -2,8 +2,8 @@
 
 # This file was generated from template {{ CURRENT_DIRECTORY }}/templates/bash_profile.sh.j2
 
-export FULLNAME="{{ FULLNAME }}"
-export EMAIL="{{ EMAIL }}"
+declare -rx FULLNAME="{{ FULLNAME }}"
+declare -rx EMAIL="{{ EMAIL }}"
 
 # Lists files or directory contents with details.
 alias l='/usr/bin/ls -lah'
@@ -84,6 +84,7 @@ function git_delete_branch {
 		echo "Aborting."
 	fi
 }
+readonly -f git_delete_branch
 
 # Setting the user file-creation mask.
 umask u=rwx,g=rx,o=
@@ -137,6 +138,7 @@ source <(/usr/bin/kubectl completion bash)
 function replace_regex {
 	/usr/bin/sed "s/$1/$2/g" <<<"$3"
 }
+readonly -f replace_regex
 
 # Displays the exit status of the previous command.
 function exit_status {
@@ -152,11 +154,13 @@ function exit_status {
 function prompt_check_mark {
 	[ $? -eq 0 ] && echo -e '\u2714'
 }
+readonly -f prompt_check_mark
 
 # Displays an X mark if the previous command exited with error.
 function prompt_x_mark {
 	[ $? -ne 0 ] && echo -e '\u2718'
 }
+readonly -f prompt_x_mark
 
 # Displays the current Git branch in parentheses.
 function prompt_git_branch {
@@ -166,6 +170,7 @@ function prompt_git_branch {
 		echo ')'
 	fi
 }
+readonly -f prompt_git_branch
 
 # Displays a star, if there are modified files in the current Git working tree.
 function prompt_git_star {
@@ -176,6 +181,7 @@ function prompt_git_star {
 		echo '*'
 	fi
 }
+readonly -f prompt_git_star
 
 # Calculates the length (number of characters) of the prompt
 function prompt_length {
@@ -186,6 +192,7 @@ function prompt_length {
 	(( LENGTH += 4 ))
 	echo $LENGTH
 }
+readonly -f prompt_length
 
 # Determines if the prompt is long.
 # True, if the length of the prompt is more than
@@ -193,16 +200,19 @@ function prompt_length {
 function is_long_prompt {
 	(( $(prompt_length) + 3 > $(/usr/bin/tput cols) / 2 ))
 }
+readonly -f is_long_prompt
 
 # Prints a new line if the prompt is long.
 function prompt_newline {
 	is_long_prompt && echo -e "\n "
 }
+readonly -f prompt_newline
 
 # Prints an arrow if the previous command was successful.
 function prompt_newline_arrow {
 	[ $? -eq 0 ] && echo -e "\u2BA1"
 }
+readonly -f prompt_newline_arrow
 
 PROMPT_SEPARATOR_COLOR="00;33m"
 INPUT_COLOR="00;97m"
