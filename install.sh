@@ -3,20 +3,23 @@
 # Run this script to install and setup everything.
 # It is only meant to work with Ubuntu.
 
-ECHO="builtin echo"
-SUDO=/usr/bin/sudo
-DIRNAME=/usr/bin/dirname
-BASENAME=/usr/bin/basename
-GROUPS_CMD=/usr/bin/groups
-GREP=/usr/bin/grep
-APTGET=/usr/bin/apt-get
-ADD_APT_REPO=/usr/bin/add-apt-repository
-ANSIBLE=/usr/bin/ansible-playbook
-DIALOG=/usr/bin/dialog
-CLEAR=/usr/bin/clear
-REBOOT=/usr/sbin/reboot
-KILLALL=/usr/bin/killall
-WHOAMI=/usr/bin/whoami
+readonly ECHO="builtin echo"
+readonly SUDO=/usr/bin/sudo
+readonly DIRNAME=/usr/bin/dirname
+readonly BASENAME=/usr/bin/basename
+readonly GROUPS_CMD=/usr/bin/groups
+readonly GREP=/usr/bin/grep
+readonly APTGET=/usr/bin/apt-get
+readonly ADD_APT_REPO=/usr/bin/add-apt-repository
+readonly PWDIR=/usr/bin/pwd
+readonly ANSIBLE=/usr/bin/ansible-playbook
+readonly DIALOG=/usr/bin/dialog
+readonly CLEAR=/usr/bin/clear
+readonly REBOOT=/usr/sbin/reboot
+readonly KILLALL=/usr/bin/killall
+readonly WHOAMI=/usr/bin/whoami
+readonly XARGS=/usr/bin/xargs
+readonly RM=/usr/bin/rm
 
 function die {
 	$ECHO -e "\033[00;31mError: $1\033[00m" >&2
@@ -27,15 +30,16 @@ function die_internal_error {
 	die "Internal error."
 }
 
-for FILE in "$SUDO" "$DIRNAME" "$BASENAME" "$GROUPS_CMD" "$GREP" "$APTGET" "$ADD_APT_REPO"
+for FILE in "$SUDO" "$DIRNAME" "$BASENAME" "$GROUPS_CMD" "$GREP" "$APTGET" \
+	"$ADD_APT_REPO" "$PWDIR"
 do
 	[ -x "$FILE" ] || die "'$FILE' doesn't exist or it's not executable."
 done
 
 # We make sure that the language for the installation is English.
-export LANG="en_US.UTF-8"
-export LANGUAGE="en_US.UTF-8"
-export LC_ALL="en_US.UTF-8"
+declare -rx LANG="en_US.UTF-8"
+declare -rx LANGUAGE="en_US.UTF-8"
+declare -rx LC_ALL="en_US.UTF-8"
 
 # Setting the user file-creation mask.
 umask u=rwx,g=rx,o=rx || \
@@ -63,8 +67,12 @@ for FILE in yes_or_no.sh setup_gpg.sh ; do
 done
 
 # Checking if there was a successful installation before.
-[ -e ~/.applications_were_automatically_configured.txt ]
-MARKER_FILE_EXISTS=$?
+readonly MARKER_FILE_NAME="$(cd ; ${PWDIR})/.applications_were_automatically_configured.txt"
+function check_marker_file {
+	[ -e "$MARKER_FILE_NAME" ]
+	MARKER_FILE_EXISTS=$?
+}
+check_marker_file
 
 $ECHO "=== Setting up your Linux system ===" && \
 $ECHO "" || die_internal_error
@@ -115,17 +123,27 @@ function check_with_grep {
 }
 
 function create_dialog {
-	$DIALOG --no-tags --checklist "Install these additional components:" 0 0 0 \
-	container "Containerization technologies such as Docker, Kubernetes, etc." off \
-	java "Development tools for Java" off || \
-	die "Internal error: Failed to create the dialog."
+	RECONFIGURE_OPTION=""
+	[ $MARKER_FILE_EXISTS -eq 0 ] && \
+	RECONFIGURE_OPTION="reconfigure \"Reconfigure applications for user $($WHOAMI)\" off"
+
+	OPTIONS="$RECONFIGURE_OPTION \
+	dark \"Set up a dark desktop theme for user $($WHOAMI)\" off
+	container \"Install containerization technologies such as Docker, Kubernetes, etc.\" off \
+	java \"Install development tools for Java\" off"
+
+	$XARGS $DIALOG --no-tags --cancel-label Abort --checklist \
+	"Additional installation options" 0 0 0 <<<"$OPTIONS"
 }
 
 INSTALL_CONTAINERIZATION_TECHS=false
 INSTALL_JAVA_TOOLS=false
 JDK_VERSION=17
+CONFIGURE_DARK_THEME=false
 
-if [ ! -x "$DIALOG" ] || [ ! -x "$CLEAR" ] ; then
+if [ ! -x "$DIALOG" ] || [ ! -x "$CLEAR" ] || [ ! -x "$XARGS" ] || \
+	[ ! -x "$WHOAMI" ] || [ ! -x "$RM" ]
+then
 	$ECHO "Note: Defaulting to basic installation since required applications are missing." && \
 	$ECHO "After successfully finishing this installation, run $FILENAME again" && \
 	$ECHO "if you want to set additional installation options." && \
@@ -136,12 +154,26 @@ elif ./scripts/yes_or_no.sh \
 else
 	# Creating a copy of stdout on descriptor 3
 	exec 3>&1
-	DIALOG_RESULT=$(create_dialog 2>&1 1>&3) || die_internal_error
+	DIALOG_RESULT=$(create_dialog 2>&1 1>&3)
+	DIALOG_STATUS=$?
 	# Closing file descriptor 3
 	exec 3>&-
 	$CLEAR || die_internal_error
 
+	if [ "$DIALOG_STATUS" -eq "123" ] || [ "$DIALOG_STATUS" -eq "124" ] ; then
+		$ECHO "Aborting as requested by user."
+		exit 1
+	elif [ "$DIALOG_STATUS" -ne "0" ] ; then
+		die_internal_error
+	fi
+
+	if $GREP --fixed-strings "reconfigure" &>/dev/null <<<"$DIALOG_RESULT" ; then
+		$RM "$MARKER_FILE_NAME" || \
+		die "Unable to delete '$MARKER_FILE_NAME'."
+	fi
+
 	INSTALL_CONTAINERIZATION_TECHS=$(check_with_grep "container" <<<"$DIALOG_RESULT") && \
+	CONFIGURE_DARK_THEME=$(check_with_grep "dark" <<<"$DIALOG_RESULT") && \
 	INSTALL_JAVA_TOOLS=$(check_with_grep "java" <<<"$DIALOG_RESULT") || die_internal_error
 fi
 
@@ -151,11 +183,13 @@ if [ "$INSTALL_JAVA_TOOLS" == "true" ] && has_sudo_rights ; then
 	$ECHO "" || die_internal_error
 fi
 
+check_marker_file
 $ECHO "=== Running Ansible playbook ===" || die_internal_error
 $ANSIBLE_COMMAND \
 	--extra-vars "FULLNAME=\"$FULLNAME\" EMAIL=\"$EMAIL\" \
 	INSTALL_JAVA_TOOLS=\"$INSTALL_JAVA_TOOLS\" \
 	JDK_VERSION=\"$JDK_VERSION\" \
+	CONFIGURE_DARK_THEME=\"$CONFIGURE_DARK_THEME\" \
 	INSTALL_CONTAINERIZATION_TECHS=\"$INSTALL_CONTAINERIZATION_TECHS\"" \
 	./setup.ansible.yml && \
 $ECHO "=== Install was SUCCESSFUL ===" || \
