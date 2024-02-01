@@ -471,6 +471,8 @@
             - exa
             - ripgrep
             - duf
+            - lm-sensors
+            - fancontrol
             # Fonts
             - fonts-noto
             - fonts-recommended
@@ -525,6 +527,7 @@
             - synaptic
             - baobab
             - gnome-disk-utility
+            - psensor
             # KDE
             - kubuntu-desktop
             - kde-standard
@@ -752,6 +755,30 @@
           cmd: /usr/bin/chfn --full-name "{{ FULLNAME }}" {{ USERNAME }}
         ignore_errors: yes
         when: FULLNAME != LINUX_FULLNAME
+
+      - name: Saving a backup of /etc/modules
+        ansible.builtin.copy:
+          src: /etc/modules
+          dest: /etc/backup_of_modules
+          mode: u=r,g=r,o=r
+          force: no
+          remote_src: yes
+        register: BACKUP_ETC_MODULES
+        tags: sensors
+
+      - name: Running sensors-detect
+        ansible.builtin.command:
+          cmd: /usr/sbin/sensors-detect --auto
+        register: SENSORS_DETECT
+        when: BACKUP_ETC_MODULES['changed']
+        notify: reboot required
+        tags: sensors
+
+      - name: Printing the output of sensors-detect
+        ansible.builtin.debug:
+          var: SENSORS_DETECT
+        when: BACKUP_ETC_MODULES['changed']
+        tags: sensors
 
     handlers:
       - name: Touching files to indicate that a reboot is required
