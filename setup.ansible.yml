@@ -150,6 +150,13 @@
         - template: konsole_settings
           target_filename: konsolerc
           target_directory: ~/.config
+      REQUIRED_DEFAULT_APPLICATIONS:
+        - application: code
+          mimetype: text/plain
+        - application: '{{ DEFAULT_BROWSER }}'
+          mimetype: application/xhtml+xml
+        - application: code
+          mimetype: application/xml
       REQUIRED_KDE_SETTINGS:
         - path: ~/.config/kdeglobals
           values:
@@ -264,7 +271,7 @@
           LINUX_FULLNAME: "{{ (ansible_facts['user_gecos'] | split(','))[0] }}"
           FULLNAME: "{{ FULLNAME | trim }}"
           EMAIL: "{{ EMAIL | trim }}"
-          DEFAULT_BROWSER: google-chrome
+          DEFAULT_BROWSER: firefox_firefox
           CONTAINERIZATION_TECHS: "{{ (INSTALL_CONTAINERIZATION_TECHS | default('false')) == 'true' }}"
           INSTALL_JAVA: "{{ (INSTALL_JAVA_TOOLS | default('false')) == 'true' }}"
           SET_DARK_THEME: "{{ (CONFIGURE_DARK_THEME | default('false')) == 'true' }}"
@@ -382,6 +389,7 @@
             {{ REQUIRED_PYTHON_PACKAGES +
             (CONTAINERIZATION_PYTHON_PACKAGES if CONTAINERIZATION_TECHS else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
+          DEFAULT_APPLICATIONS: '{{ REQUIRED_DEFAULT_APPLICATIONS }}'
           KDE_SETTINGS: >-
             {{ REQUIRED_KDE_SETTINGS +
             (DARK_KDE_SETTINGS if SET_DARK_THEME else []) }}
@@ -1162,6 +1170,11 @@
           cmd: /usr/bin/xdg-settings set default-web-browser "{{ DEFAULT_BROWSER }}.desktop"
         when: CURRENT_DEFAULT_BROWSER['stdout'] != "yes"
         tags: browser
+
+      - name: Setting default applications for file types
+        ansible.builtin.include_tasks:
+          file: ./include_tasks/set_default_application_for_file_type.ansible.yml
+        loop: '{{ DEFAULT_APPLICATIONS }}'
 
       - name: Modifying KDE configuration files
         community.general.kdeconfig:

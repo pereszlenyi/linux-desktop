@@ -1,0 +1,16 @@
+---
+  - name: Querying the default application for the file type
+    ansible.builtin.command:
+      cmd: /usr/bin/xdg-mime query default "{{ item['mimetype'] }}"
+    changed_when: false
+    register: CURRENT_DEFAULT_APP
+    failed_when: >-
+      (CURRENT_DEFAULT_APP is failed) or
+      (CURRENT_DEFAULT_APP['stdout_lines'] | length != 1) or
+      (CURRENT_DEFAULT_APP['stderr_lines'] != [])
+
+  - name: Setting the default application for the file type
+    ansible.builtin.command:
+      cmd: /usr/bin/xdg-mime default "{{ item['application'] }}.desktop" "{{ item['mimetype'] }}"
+    when: >-
+      item['application'] + ".desktop" != CURRENT_DEFAULT_APP['stdout']
