@@ -81,6 +81,33 @@
         - ansible-lint
       CONTAINERIZATION_PYTHON_PACKAGES:
         - docker
+      REQUIRED_GTK_CONFIGURATION:
+        # Fonts
+        - key: /org/gnome/desktop/interface/font-name
+          value: >-
+            'Noto Sans 12'
+        - key: /org/gnome/desktop/interface/monospace-font-name
+          value: >-
+            'Cascadia Mono Semi-Light 14'
+        - key: /org/gnome/desktop/interface/document-font-name
+          value: >-
+            'Noto Sans 12'
+        - key: /org/gnome/desktop/interface/font-hinting
+          value: >-
+            'medium'
+        - key: /org/gnome/desktop/interface/font-antialiasing
+          value: >-
+            'rgba'
+        - key: /org/gnome/desktop/interface/text-scaling-factor
+          value: 1.0
+        - key: /org/gnome/desktop/wm/preferences/titlebar-font
+          value: >-
+            'Noto Sans 11'
+      DARK_GTK_CONFIGURATION:
+        # Theme
+        - key: /org/gnome/desktop/interface/gtk-theme
+          value: >-
+            'Breeze'
       REQUIRED_CONFIGURATION_FILES:
         # Geany
         - template: geany.conf
@@ -388,6 +415,9 @@
           PYTHON_PACKAGES: >-
             {{ REQUIRED_PYTHON_PACKAGES +
             (CONTAINERIZATION_PYTHON_PACKAGES if CONTAINERIZATION_TECHS else []) }}
+          GTK_CONFIGURATION: >-
+            {{ REQUIRED_GTK_CONFIGURATION +
+            (DARK_GTK_CONFIGURATION if SET_DARK_THEME else []) }}
           CONFIGURATION_FILES: '{{ REQUIRED_CONFIGURATION_FILES }}'
           DEFAULT_APPLICATIONS: '{{ REQUIRED_DEFAULT_APPLICATIONS }}'
           KDE_SETTINGS: >-
@@ -471,6 +501,8 @@
             - exa
             - ripgrep
             - duf
+            - dconf-cli
+            - python3-psutil
             - lm-sensors
             - fancontrol
             # Fonts
@@ -1136,6 +1168,14 @@
           - name: Setting the Plasma icon theme
             ansible.builtin.command:
               cmd: /usr/lib/x86_64-linux-gnu/libexec/plasma-changeicons "{{ PLASMA_ICON_THEME }}"
+
+      - name: Modifying GTK configurations
+        community.general.dconf:
+          key: "{{ item['key'] }}"
+          value: "{{ item['value'] }}"
+        loop: '{{ GTK_CONFIGURATION }}'
+        when: OVERWRITE_CONFIGURATIONS
+        tags: GTK
 
       - name: Creating directories for configuration files
         ansible.builtin.file:
