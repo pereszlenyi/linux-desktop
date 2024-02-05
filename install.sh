@@ -16,7 +16,8 @@ readonly ANSIBLE=/usr/bin/ansible-playbook
 readonly DIALOG=/usr/bin/dialog
 readonly CLEAR=/usr/bin/clear
 readonly REBOOT=/usr/sbin/reboot
-readonly KILLALL=/usr/bin/killall
+readonly LOGINCTL=/usr/bin/loginctl
+readonly SYSTEMCTL=/usr/bin/systemctl
 readonly WHOAMI=/usr/bin/whoami
 readonly XARGS=/usr/bin/xargs
 readonly RM=/usr/bin/rm
@@ -199,19 +200,19 @@ if [ -e /var/run/reboot-required ] ; then
 	$ECHO "" && \
 	$ECHO "You have to restart your computer for the changes to take effect." && \
 	$ECHO "After restarting, you can run this install script again by executing 'run_install_script'." && \
-	if [ -x "$REBOOT" ] && has_sudo_rights && \
+	if [ -x "$REBOOT" ] && [ -x "$SYSTEMCTL" ] && has_sudo_rights && \
 		./scripts/yes_or_no.sh "Do you want to restart now?"
 	then
-		$REBOOT && exit 0
+		($REBOOT || $SYSTEMCTL reboot -i) && exit 0
 	fi
 fi
 
 if [ $MARKER_FILE_EXISTS -ne 0 ] ; then
 	$ECHO "" && \
 	$ECHO "You have to sign out for the configuration changes to take effect." && \
-	if [ -x "$KILLALL" ] && [ -x "$WHOAMI" ] && \
-		./scripts/yes_or_no.sh "Do you want to kill all running programs and sign out now?"
+	if [ -x "$LOGINCTL" ] && \
+		./scripts/yes_or_no.sh "Do you want to terminate all running programs and sign out now?"
 	then
-		$KILLALL --user "$($WHOAMI)"
+		$LOGINCTL terminate-user ""
 	fi
 fi
