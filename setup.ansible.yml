@@ -182,6 +182,10 @@
           mimetype: text/plain
         - application: '{{ DEFAULT_BROWSER }}'
           mimetype: application/xhtml+xml
+        - application: '{{ DEFAULT_BROWSER }}'
+          mimetype: x-scheme-handler/http
+        - application: '{{ DEFAULT_BROWSER }}'
+          mimetype: x-scheme-handler/https
         - application: code
           mimetype: application/xml
       REQUIRED_KDE_SETTINGS:
@@ -202,6 +206,9 @@
             - group: General
               key: menuFont
               value: Noto Sans,11,-1,5,50,0,0,0,0,0
+            - group: General
+              key: BrowserApplication
+              value: "{{ DEFAULT_BROWSER }}.desktop"
             - group: WM
               key: activeFont
               value: Noto Sans,11,-1,5,50,0,0,0,0,0
@@ -219,6 +226,62 @@
             - group: General
               key: menuFont
               value: Noto Sans,11,-1,5,50,0,0,0,0,0
+        - path: ~/.config/kwinrc
+          values:
+            - group: Plugins
+              key: blurEnabled
+              bool_value: true
+            - group: TabBox
+              key: LayoutName
+              value: thumbnail_grid
+        - path: ~/.config/kscreenlockerrc
+          values:
+            - group: Daemon
+              key: Autolock
+              bool_value: true
+            - group: Daemon
+              key: Timeout
+              value: 10
+            - group: Daemon
+              key: LockGrace
+              value: 3
+            - group: Daemon
+              key: LockOnResume
+              bool_value: true
+            - groups: [Greeter, LnF, General]
+              key: showMediaControls
+              bool_value: false
+        - path: ~/.config/kglobalshortcutsrc
+          values:
+            - group: ksmserver
+              key: Lock Session
+              value: >-
+                Meta+L	Ctrl+Alt+L	Screensaver,Meta+L	Ctrl+Alt+L	Screensaver,Lock Session
+            - group: ksmserver
+              key: Log Out
+              value: none,Ctrl+Alt+Del,Log Out
+            - group: ksmserver
+              key: Log Out Without Confirmation
+              value: Ctrl+Alt+Ins,,Log Out Without Confirmation
+            - group: ksmserver
+              key: Reboot Without Confirmation
+              value: Ctrl+Alt+Del,,Reboot Without Confirmation
+        - path: ~/.config/ksmserverrc
+          values:
+            - group: General
+              key: loginMode
+              value: emptySession
+        - path: ~/.config/powermanagementprofilesrc
+          values:
+            - groups: [AC, HandleButtonEvents]
+              key: powerButtonAction
+              value: 8
+            - groups: [Battery, HandleButtonEvents]
+              key: powerButtonAction
+              value: 8
+            - groups: [LowBattery, HandleButtonEvents]
+              key: powerButtonAction
+              value: 8
       DARK_KDE_SETTINGS:
         - path: ~/.config/kdeglobals
           values:
