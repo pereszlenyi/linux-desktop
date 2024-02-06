@@ -865,14 +865,41 @@
         ansible.builtin.command:
           cmd: /usr/sbin/sensors-detect --auto
         register: SENSORS_DETECT
-        when: BACKUP_ETC_MODULES['changed']
-        notify: reboot required
+        changed_when: false
         tags: sensors
 
       - name: Printing the output of sensors-detect
         ansible.builtin.debug:
           var: SENSORS_DETECT
-        when: BACKUP_ETC_MODULES['changed']
+        tags: sensors
+
+      - name: Processing the output of sensors-detect
+        vars:
+          CUT_HERE_LINE: "#----cut here----"
+          START_INDEX: >-
+            {{ SENSORS_DETECT['stdout_lines'].index(CUT_HERE_LINE) + 1 }}
+        ansible.builtin.set_fact:
+          MODULES_START_INDEX: "{{ START_INDEX }}"
+          MODULES_LINE_COUNT: >-
+            {{ SENSORS_DETECT['stdout_lines'][(START_INDEX | int):].index(CUT_HERE_LINE) }}
+        when: >-
+          "To load everything that is needed, add this to /etc/modules:"
+          in SENSORS_DETECT['stdout_lines']
+        tags: sensors
+
+      - name: Adding sensor chip drivers to /etc/modules
+        vars:
+          START_INDEX: "{{ MODULES_START_INDEX | default(0) }}"
+          LINE_COUNT: "{{ MODULES_LINE_COUNT | default(0) }}"
+        ansible.builtin.lineinfile:
+          path: /etc/modules
+          line: "{{ item }}"
+        notify: reboot required
+        loop: >-
+          {{ SENSORS_DETECT['stdout_lines'][
+            (START_INDEX | int):
+            (START_INDEX | int) + (LINE_COUNT | int)
+          ] }}
         tags: sensors
 
     handlers:
