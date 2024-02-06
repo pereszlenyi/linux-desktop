@@ -586,16 +586,23 @@
             - fonts-ancient-scripts
             - fonts-powerline
             - fonts-oxygen
+            - octicons
             # Themes
             - adapta-kde
             - adapta-gtk-theme
             - papirus-icon-theme
             - deepin-icon-theme
+            - qt5-style-plugins
             - qt5-style-kvantum
             - qt5-style-kvantum-l10n
             - qt5-style-kvantum-themes
+            - qt5-style-plugin-cleanlooks
+            - qt5-style-plugin-motif
+            - qt5-style-plugin-plastique
             - materia-kde
             - materia-gtk-theme
+            - adwaita-qt
+            - adwaita-icon-theme
             - adwaita-icon-theme-full
             - breathe-icon-theme
             - breeze
@@ -610,6 +617,14 @@
             - kde-style-qtcurve-qt5
             - gtk2-engines-qtcurve
             - phinger-cursor-theme
+            - comixcursors-righthanded
+            - comixcursors-righthanded-opaque
+            - chameleon-cursor-theme
+            - moka-icon-theme
+            - numix-icon-theme
+            - numix-icon-theme-circle
+            - gnome-themes-extra
+            - gnome-extra-icons
             # GUI applications
             - xdg-utils
             - gitk
@@ -643,6 +658,8 @@
             - kshutdown
             - marble
             - plasma-marble
+            - markdownpart
+            - svgpart
           state: latest
         tags: install
 
