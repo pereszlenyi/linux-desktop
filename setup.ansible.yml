@@ -103,6 +103,23 @@
         - key: /org/gnome/desktop/wm/preferences/titlebar-font
           value: >-
             'Noto Sans 11'
+        # Psensor
+        - key: /apps/psensor/interface-hide-on-startup
+          value: true
+        - key: /apps/psensor/interface-window-restore-enabled
+          value: true
+        - key: /apps/psensor/interface-sensorlist-position
+          value: 0
+        - key: /apps/psensor/graph-monitoring-duration
+          value: 60
+        - key: /apps/psensor/graph-update-interval
+          value: 1
+        - key: /apps/psensor/sensor-update-interval
+          value: 1
+        - key: /apps/psensor/slog-enabled
+          value: true
+        - key: /apps/psensor/slog-interval
+          value: 300
       DARK_GTK_CONFIGURATION:
         # Theme
         - key: /org/gnome/desktop/interface/gtk-theme
